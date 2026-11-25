@@ -66,6 +66,7 @@
   .top a { display: inline-flex; align-items: center; gap: 0.6rem; color: inherit; text-decoration: none; }
   .top a:hover { color: var(--ink); }
   .top img { width: 1.75rem; height: 1.75rem; border-radius: 3px; }
+  .tally { display: flex; gap: 1.25rem; }
   .tally b { font-family: var(--serif); font-weight: 700; color: var(--ink); font-size: 1.05rem; }
 
   /* 开头 */
@@ -205,11 +206,63 @@
   .parts .build dt { color: var(--azurite); }
   .parts .check dt { color: var(--cinnabar); }
   .parts .check dd { font-weight: 600; }
-  .parts .drill dt { color: var(--malachite); }
-  .drill ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.3rem; font-size: 0.95rem; line-height: 1.6; }
-  .drill li { display: flex; align-items: baseline; gap: 0.5em; }
-  .drill li span { order: -1; flex: none; font-size: 0.85rem; color: var(--ink-soft); }
-  .drill p { margin: 0.6rem 0 0; font-size: 0.9rem; color: var(--ink-soft); }
+
+  /* 每个阶段下面的三块：讲、练、问 */
+  .body { min-width: 0; }
+  .more { margin-top: 1.5rem; border-top: 1px solid var(--line); }
+  .more > details { border-bottom: 1px solid var(--line); }
+  .more > details > summary {
+    display: grid; grid-template-columns: 1.75rem minmax(0, 1fr) auto 1rem;
+    column-gap: 0.9rem; align-items: center;
+    padding: 0.7rem 0; cursor: pointer; list-style: none;
+  }
+  .more > details > summary::-webkit-details-marker { display: none; }
+  .more > details > summary::after {
+    content: "+"; grid-column: 4; text-align: center;
+    color: var(--ink-soft); font-size: 1.15rem; line-height: 1;
+  }
+  .more > details[open] > summary::after { content: "\2212"; }
+  .more > details > summary:hover .what { color: var(--azurite); }
+  .seal {
+    width: 1.75rem; height: 1.75rem;
+    display: grid; place-items: center;
+    border-radius: 2px;
+    box-shadow: inset 0 0 0 1.5px currentColor;
+    font-family: var(--serif); font-weight: 700; font-size: 0.95rem; line-height: 1;
+    color: var(--ink-soft);
+  }
+  .drill .seal { color: var(--malachite); }
+  .quiz .seal { color: var(--azurite); }
+  .what { font-weight: 600; }
+  .count { grid-column: 3; font-size: 0.9rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .inner { padding: 0.25rem 0 1.5rem 2.65rem; }
+
+  .points { margin: 0; padding-left: 1.1em; display: grid; gap: 0.6rem; max-width: 36em; }
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.86em; background: var(--paper-deep);
+    padding: 0.1em 0.35em; border-radius: 3px;
+  }
+  pre {
+    margin: 1.25rem 0 0; padding: 1rem 1.1rem;
+    background: var(--paper-deep); border-radius: 3px;
+    overflow-x: auto; font-size: 0.82rem; line-height: 1.6; tab-size: 4;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  .aside { margin: 0.9rem 0 0; font-size: 0.9rem; color: var(--ink-soft); max-width: 38em; }
+
+  .inner h3 { margin: 1.1rem 0 0.5rem; font-size: 0.9rem; font-weight: 600; color: var(--ink-soft); }
+  .inner h3:first-child { margin-top: 0.25rem; }
+  .probs { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; font-size: 0.95rem; line-height: 1.6; }
+  .probs li { display: grid; grid-template-columns: auto auto minmax(0, 1fr); column-gap: 0.6em; align-items: baseline; }
+  .probs input { width: 1rem; height: 1rem; margin: 0; accent-color: var(--malachite); transform: translateY(0.15em); cursor: pointer; }
+  .probs .lv { font-size: 0.85rem; color: var(--ink-soft); }
+  .probs li:has(input:checked) a { color: var(--ink-soft); text-decoration-color: var(--line); }
+
+  .qa { padding: 0.6rem 0; }
+  .qa + .qa { border-top: 1px solid var(--line); }
+  .qa summary { cursor: pointer; font-weight: 600; }
+  .qa p { margin: 0.5rem 0 0.2rem 1.1em; max-width: 36em; }
 
   footer {
     border-top: 1px solid var(--line);
@@ -220,7 +273,8 @@
   @media (max-width: 54rem) {
     .hero { grid-template-columns: minmax(0, 1fr); padding: 2rem 0 3.5rem; }
     .stage { grid-template-columns: 2.5rem minmax(0, 1fr); column-gap: 1.25rem; padding-bottom: 3rem; }
-    .stage .parts { grid-column: 2; margin-top: 1.1rem; }
+    .stage .body { grid-column: 2; margin-top: 1.1rem; }
+    .inner { padding-left: 0; }
   }
   @media (max-width: 30rem) {
     h1 { font-size: 1.6rem; }
@@ -249,7 +303,7 @@
         <span>再接上 Agent harness。</span>
       </h1>
       <div>
-        <p class="lede">一个项目做六步。每一步只用前面做出来的东西，结束时都有一个能判对错的检查：通过了才往下走。最后得到的 harness 能跑任务，也能说清任务失败在哪。</p>
+        <p class="lede">一个项目做六步。每一步只用前面做出来的东西，结束时都有一个能判对错的检查：通过了才往下走。最后得到的 harness 能跑任务，也能说清任务失败在哪。每一步都配了要点、练习题和自测问答。</p>
       </div>
 
       <div class="mask" id="mask" hidden>
@@ -264,6 +318,7 @@
         doing = 进行中
         done  = 已验证（会盖上红印）
       想挂笔记或代码链接，在 <p class="state"> 里加一个 <a href="...">笔记</a>。
+      做题的勾选是访客各自浏览器里的 localStorage，和 data-status 无关。
     -->
     <ol class="stages">
 
@@ -273,22 +328,74 @@
           <h2>Transformer</h2>
           <p class="state"></p>
         </div>
+        <div class="body">
         <dl class="parts">
           <div class="learn"><dt>学</dt><dd>tokenization、embedding、causal attention、残差和归一化。</dd></div>
           <div class="build"><dt>做</dt><dd>写一个小 GPT 的 forward。</dd></div>
           <div class="check"><dt>验</dt><dd>改未来 token，前面位置的 logits 不变。</dd></div>
-          <div class="drill"><dt>练</dt><dd>
-            <ul>
-            <li><a href="https://www.deep-ml.com/problems/380" lang="en">Byte Pair Encoding (BPE) Tokenizer</a><span>中</span></li>
-            <li><a href="https://www.deep-ml.com/problems/946" lang="en">Add Positional Embeddings to Token Embeddings</a><span>易</span></li>
-            <li><a href="https://www.deep-ml.com/problems/957" lang="en">Implement Batched Causal Self-Attention</a><span>中</span></li>
-            <li><a href="https://www.deep-ml.com/problems/109" lang="en">Implement Layer Normalization for Sequence Data</a><span>中</span></li>
-            <li><a href="https://www.deep-ml.com/problems/1056" lang="en">Pre-Norm GPT Transformer Block Forward Pass</a><span>难</span></li>
-            <li><a href="https://www.deep-ml.com/problems/918" lang="en">Build a Tiny GPT</a><span>难</span></li>
-            </ul>
-            <p>「改未来 token」这个检查题库里没有，要自己写一个 assert。</p>
-          </dd></div>
         </dl>
+        <div class="more">
+          <details class="notes">
+            <summary><span class="seal">讲</span><span class="what">要点和检查代码</span></summary>
+            <div class="inner">
+            <ul class="points">
+              <li>Tokenizer 把文本切成 token，再映射成整数 id。Embedding 是一张查找表：id 进去，向量出来，再加上位置信息。形状从 <code>(B, T)</code> 变成 <code>(B, T, C)</code>。</li>
+              <li>Causal attention：位置 t 只能读到位置 ≤ t 的内容。实现上是把注意力分数矩阵的上三角填成 −∞，再做 softmax。</li>
+              <li>残差连接让每个子层只学「在原来的基础上改多少」：<code>x = x + f(norm(x))</code>。归一化放在子层前面（pre-norm），层数多了也好训。</li>
+              <li>最后一层把隐状态映射回词表大小，得到每个位置对下一个 token 的 logits，形状 <code>(B, T, V)</code>。</li>
+            </ul>
+            <pre><code>import torch
+
+@torch.no_grad()
+def check_causal(model, vocab_size, T=16, t=8):
+    model.eval()                                   # 关掉 dropout，否则两次前向本来就不同
+    x = torch.randint(vocab_size, (1, T))
+    x2 = x.clone()
+    x2[:, t:] = (x[:, t:] + 1) % vocab_size        # 只改位置 t 及之后的 token
+    a, b = model(x), model(x2)                     # logits: (1, T, V)
+    assert torch.allclose(a[:, :t], b[:, :t], atol=1e-5), "前面的 logits 变了：mask 漏了"
+    assert not torch.allclose(a[:, t:], b[:, t:]), "后面的 logits 没变：模型没在看输入"</code></pre>
+            <p class="aside">两个 assert 缺一不可。只有第一个的话，一个完全不看输入的模型也能通过。</p>
+            </div>
+          </details>
+          <details class="drill">
+            <summary><span class="seal">练</span><span class="what">练习题</span><span class="count" data-count></span></summary>
+            <div class="inner">
+            <h3>基础</h3>
+            <ul class="probs">
+              <li><input type="checkbox" data-pid="374" aria-label="做完了：Character-Level Tokenizer (stoi/itos/BOS)"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/374" lang="en">Character-Level Tokenizer (stoi/itos/BOS)</a></li>
+              <li><input type="checkbox" data-pid="945" aria-label="做完了：Token Embedding Lookup Table"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/945" lang="en">Token Embedding Lookup Table</a></li>
+              <li><input type="checkbox" data-pid="946" aria-label="做完了：Add Positional Embeddings to Token Embeddings"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/946" lang="en">Add Positional Embeddings to Token Embeddings</a></li>
+              <li><input type="checkbox" data-pid="965" aria-label="做完了：Construct Causal Attention Mask via tril and triu Methods"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/965" lang="en">Construct Causal Attention Mask via tril and triu Methods</a></li>
+              <li><input type="checkbox" data-pid="53" aria-label="做完了：Implement Self-Attention Mechanism"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/53" lang="en">Implement Self-Attention Mechanism</a></li>
+              <li><input type="checkbox" data-pid="109" aria-label="做完了：Implement Layer Normalization for Sequence Data"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/109" lang="en">Implement Layer Normalization for Sequence Data</a></li>
+              <li><input type="checkbox" data-pid="113" aria-label="做完了：Implement a Simple Residual Block with Shortcut Connection"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/113" lang="en">Implement a Simple Residual Block with Shortcut Connection</a></li>
+            </ul>
+            <h3>进阶</h3>
+            <ul class="probs">
+              <li><input type="checkbox" data-pid="380" aria-label="做完了：Byte Pair Encoding (BPE) Tokenizer"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/380" lang="en">Byte Pair Encoding (BPE) Tokenizer</a></li>
+              <li><input type="checkbox" data-pid="957" aria-label="做完了：Implement Batched Causal Self-Attention"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/957" lang="en">Implement Batched Causal Self-Attention</a></li>
+              <li><input type="checkbox" data-pid="94" aria-label="做完了：Implement Multi-Head Attention"><span class="lv">难</span><a href="https://www.deep-ml.com/problems/94" lang="en">Implement Multi-Head Attention</a></li>
+              <li><input type="checkbox" data-pid="1007" aria-label="做完了：GPT FeedForward Block (Linear-GELU-Linear)"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/1007" lang="en">GPT FeedForward Block (Linear-GELU-Linear)</a></li>
+              <li><input type="checkbox" data-pid="408" aria-label="做完了：Pre-Norm vs Post-Norm Transformer Block"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/408" lang="en">Pre-Norm vs Post-Norm Transformer Block</a></li>
+              <li><input type="checkbox" data-pid="1056" aria-label="做完了：Pre-Norm GPT Transformer Block Forward Pass"><span class="lv">难</span><a href="https://www.deep-ml.com/problems/1056" lang="en">Pre-Norm GPT Transformer Block Forward Pass</a></li>
+              <li><input type="checkbox" data-pid="918" aria-label="做完了：Build a Tiny GPT"><span class="lv">难</span><a href="https://www.deep-ml.com/problems/918" lang="en">Build a Tiny GPT</a></li>
+            </ul>
+            <p class="aside">「改未来 token」这个检查题库里没有，用上面那段代码。</p>
+            </div>
+          </details>
+          <details class="quiz">
+            <summary><span class="seal">问</span><span class="what">自测问答</span><span class="count">5 题</span></summary>
+            <div class="inner">
+            <details class="qa"><summary>为什么改了未来的 token，前面的 logits 不变？什么会破坏这个性质？</summary><p>每一层里，位置 t 只从位置 ≤ t 读信息，叠多少层都一样，所以位置 t 的输出和它后面的输入无关。会破坏它的：mask 写反或漏掉，或者用了跨位置做统计的层（比如在序列维度上算均值方差的归一化）。LayerNorm 只在特征维上算，不会破坏。</p></details>
+            <details class="qa"><summary>attention 分数为什么要除以 √d_k？</summary><p>两个 d_k 维向量点积的方差大致随 d_k 增长。不缩放的话分数太大，softmax 接近 one-hot，梯度很小。除以 √d_k 把方差拉回 1 左右。</p></details>
+            <details class="qa"><summary>pre-norm 和 post-norm 差在哪？</summary><p>pre-norm 是 <code>x + f(norm(x))</code>，残差主路上没有归一化，梯度可以直接传回底层，深层网络更稳。post-norm 是 <code>norm(x + f(x))</code>，原始 Transformer 的写法，对学习率和 warmup 更敏感。</p></details>
+            <details class="qa"><summary>没有位置编码会怎样？</summary><p>不带 mask 的 self-attention 分不清顺序：把输入打乱，输出只是跟着打乱。带 causal mask 时，每个位置能看到的 token 数不同，模型能从中推出一部分位置信息，但显式的位置编码仍然是标准做法。</p></details>
+            <details class="qa"><summary>一个 block 里参数主要在哪？</summary><p>注意力有 Q、K、V 和输出投影四个 d×d 矩阵，约 4d²。MLP 是 d→4d→d，约 8d²。所以 MLP 占三分之二左右。词表 embedding 是 V×d，模型很小时它反而是大头。</p></details>
+            </div>
+          </details>
+        </div>
+        </div>
       </li>
 
       <li class="stage" id="s2" data-status="todo">
@@ -297,22 +404,86 @@
           <h2>预训练</h2>
           <p class="state"></p>
         </div>
+        <div class="body">
         <dl class="parts">
           <div class="learn"><dt>学</dt><dd>next-token loss、反向传播、AdamW、学习率、数据切分、checkpoint。</dd></div>
           <div class="build"><dt>做</dt><dd>先让模型过拟合一个 batch。</dd></div>
           <div class="check"><dt>验</dt><dd>用留出集区分「能训练」和「能泛化」。</dd></div>
-          <div class="drill"><dt>练</dt><dd>
-            <ul>
-            <li><a href="https://www.deep-ml.com/problems/954" lang="en">Construct Next-Token Prediction Targets</a><span>易</span></li>
-            <li><a href="https://www.deep-ml.com/problems/26" lang="en">Implementing Basic Autograd Operations</a><span>中</span></li>
-            <li><a href="https://www.deep-ml.com/problems/169" lang="en">Implement AdamW Optimizer Step</a><span>中</span></li>
-            <li><a href="https://www.deep-ml.com/problems/196" lang="en">Warmup + Cosine Decay Schedule</a><span>中</span></li>
-            <li><a href="https://www.deep-ml.com/problems/1058" lang="en">Random Train/Validation/Test Split with Shuffling</a><span>易</span></li>
-            <li><a href="https://www.deep-ml.com/problems/2346" lang="en">Preflight Checks Before a Long Training Run: Output Shape, Loss at Init, Overfit One Batch</a><span>中</span></li>
-            <li><a href="https://www.deep-ml.com/problems/86" lang="en">Detect Overfitting or Underfitting</a><span>易</span></li>
-            </ul>
-          </dd></div>
         </dl>
+        <div class="more">
+          <details class="notes">
+            <summary><span class="seal">讲</span><span class="what">要点和检查代码</span></summary>
+            <div class="inner">
+            <ul class="points">
+              <li>训练目标：输入是 <code>x[0:T]</code>，目标是右移一位的 <code>x[1:T+1]</code>。每个位置都是一次 V 选 1 的分类，loss 是所有位置交叉熵的平均。</li>
+              <li>随机初始化时，模型对下一个 token 的预测接近均匀，loss 应该在 <code>ln(V)</code> 附近。差得远，说明初始化或 loss 写错了。</li>
+              <li>AdamW 是 Adam 加上和梯度解耦的 weight decay：衰减直接作用在权重上，不经过自适应步长的缩放。</li>
+              <li>学习率常用 warmup 加 cosine 衰减。梯度裁剪防止个别 batch 把训练带崩。</li>
+              <li>数据先切分再训练，留出集从头到尾不参与更新。Checkpoint 要存模型、优化器状态和步数，三样都要，否则接着训和没断过不等价。</li>
+            </ul>
+            <pre><code>import math, torch, torch.nn.functional as F
+
+def loss_fn(model, x, y):                          # x, y: (B, T)，y 是 x 右移一位
+    logits = model(x)                              # (B, T, V)
+    return F.cross_entropy(logits.flatten(0, 1), y.flatten())
+
+def overfit_one_batch(model, x, y, vocab_size, steps=300, lr=1e-3):
+    opt = torch.optim.AdamW(model.parameters(), lr=lr)
+    model.train()                                  # 这一步把 dropout 设成 0
+    first = loss_fn(model, x, y).item()
+    assert abs(first - math.log(vocab_size)) &lt; 1.0, f"初始 loss {first:.2f}，应接近 ln(V)"
+    for _ in range(steps):
+        opt.zero_grad()
+        loss = loss_fn(model, x, y)
+        loss.backward()
+        opt.step()
+    assert loss.item() &lt; 0.1, f"一个 batch 都背不下来：{loss.item():.3f}"
+
+@torch.no_grad()
+def evaluate(model, batches):                      # 留出集上的平均 loss
+    model.eval()
+    return sum(loss_fn(model, x, y).item() for x, y in batches) / len(batches)</code></pre>
+            <p class="aside">阈值 0.1 要看数据：同一个前缀在 batch 里有多种续写时，loss 到不了 0。过拟合通过之后，正式训练时同时看训练 loss 和留出集 loss：两个一起降是在泛化，训练降而留出不降是在背。</p>
+            </div>
+          </details>
+          <details class="drill">
+            <summary><span class="seal">练</span><span class="what">练习题</span><span class="count" data-count></span></summary>
+            <div class="inner">
+            <h3>基础</h3>
+            <ul class="probs">
+              <li><input type="checkbox" data-pid="954" aria-label="做完了：Construct Next-Token Prediction Targets"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/954" lang="en">Construct Next-Token Prediction Targets</a></li>
+              <li><input type="checkbox" data-pid="944" aria-label="做完了：Sliding Window Text Dataset Generator"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/944" lang="en">Sliding Window Text Dataset Generator</a></li>
+              <li><input type="checkbox" data-pid="134" aria-label="做完了：Compute Multi-class Cross-Entropy Loss"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/134" lang="en">Compute Multi-class Cross-Entropy Loss</a></li>
+              <li><input type="checkbox" data-pid="320" aria-label="做完了：Calculate Perplexity for Language Models"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/320" lang="en">Calculate Perplexity for Language Models</a></li>
+              <li><input type="checkbox" data-pid="1058" aria-label="做完了：Random Train/Validation/Test Split with Shuffling"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/1058" lang="en">Random Train/Validation/Test Split with Shuffling</a></li>
+              <li><input type="checkbox" data-pid="886" aria-label="做完了：Run One Training Step: Forward, Loss, Backward, Optimizer"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/886" lang="en">Run One Training Step: Forward, Loss, Backward, Optimizer</a></li>
+              <li><input type="checkbox" data-pid="86" aria-label="做完了：Detect Overfitting or Underfitting"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/86" lang="en">Detect Overfitting or Underfitting</a></li>
+            </ul>
+            <h3>进阶</h3>
+            <ul class="probs">
+              <li><input type="checkbox" data-pid="26" aria-label="做完了：Implementing Basic Autograd Operations"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/26" lang="en">Implementing Basic Autograd Operations</a></li>
+              <li><input type="checkbox" data-pid="169" aria-label="做完了：Implement AdamW Optimizer Step"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/169" lang="en">Implement AdamW Optimizer Step</a></li>
+              <li><input type="checkbox" data-pid="196" aria-label="做完了：Warmup + Cosine Decay Schedule"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/196" lang="en">Warmup + Cosine Decay Schedule</a></li>
+              <li><input type="checkbox" data-pid="197" aria-label="做完了：Gradient Clipping by Global Norm"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/197" lang="en">Gradient Clipping by Global Norm</a></li>
+              <li><input type="checkbox" data-pid="2346" aria-label="做完了：Preflight Checks Before a Long Training Run: Output Shape, Loss at Init, Overfit One Batch"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2346" lang="en">Preflight Checks Before a Long Training Run: Output Shape, Loss at Init, Overfit One Batch</a></li>
+              <li><input type="checkbox" data-pid="2275" aria-label="做完了：Fix the Bugs: A Tiny Transformer Language Model and Its Training Loop"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2275" lang="en">Fix the Bugs: A Tiny Transformer Language Model and Its Training Loop</a></li>
+              <li><input type="checkbox" data-pid="997" aria-label="做完了：Manual Backprop Through Cross-Entropy Intermediates"><span class="lv">难</span><a href="https://www.deep-ml.com/problems/997" lang="en">Manual Backprop Through Cross-Entropy Intermediates</a></li>
+            </ul>
+            </div>
+          </details>
+          <details class="quiz">
+            <summary><span class="seal">问</span><span class="what">自测问答</span><span class="count">6 题</span></summary>
+            <div class="inner">
+            <details class="qa"><summary>随机初始化的模型，loss 应该是多少？</summary><p><code>ln(V)</code>。V = 50257 时约 10.8。第一步的 loss 明显高于或低于这个数，先查初始化和 loss 的写法。</p></details>
+            <details class="qa"><summary>AdamW 和「Adam 加 L2 正则」有什么区别？</summary><p>L2 把 λw 加进梯度，之后会被 Adam 的自适应步长缩放，梯度历史大的参数实际衰减得少。AdamW 把衰减从梯度里拿出来，直接按比例缩小权重，每个参数衰减的力度一致。</p></details>
+            <details class="qa"><summary>为什么先过拟合一个 batch？</summary><p>它把问题切成两半。一个 batch 都背不下来，问题在模型、loss 或优化器的接线上，和数据量、超参无关。这个检查只要几秒钟。</p></details>
+            <details class="qa"><summary>训练 loss 在降，留出集 loss 在升，说明什么？</summary><p>模型在背训练集。可以加数据、缩小模型、加正则（dropout、weight decay），或者在留出集 loss 最低的地方停下。</p></details>
+            <details class="qa"><summary>为什么要 warmup？</summary><p>训练刚开始时梯度大、方向不稳，Adam 的二阶矩估计也还不准。一上来就用大学习率容易发散。先用小学习率走一段，等统计量稳定再放大。</p></details>
+            <details class="qa"><summary>Checkpoint 只存了模型权重，接着训会怎样？</summary><p>优化器的动量和二阶矩丢了，学习率调度也不知道走到哪一步。接着训的头一段 loss 常会出现一个尖峰，结果和不中断的训练不一样。</p></details>
+            </div>
+          </details>
+        </div>
+        </div>
       </li>
 
       <li class="stage" id="s3" data-status="todo">
@@ -321,23 +492,92 @@
           <h2>后训练</h2>
           <p class="state"></p>
         </div>
+        <div class="body">
         <dl class="parts">
           <div class="learn"><dt>学</dt><dd>SFT、LoRA、偏好数据，再比较 DPO 和 RL 的目标。</dd></div>
           <div class="build"><dt>做</dt><dd>实际跑一次 LoRA SFT。</dd></div>
           <div class="check"><dt>验</dt><dd>对同一组留出 prompts 比较训练前后，不只看训练 loss。</dd></div>
-          <div class="drill"><dt>练</dt><dd>
-            <ul>
-            <li><a href="https://www.deep-ml.com/problems/795" lang="en">Masked Cross-Entropy Loss for Supervised Finetuning</a><span>中</span></li>
-            <li><a href="https://www.deep-ml.com/problems/222" lang="en">LoRA: Low-Rank Adaptation Forward Pass</a><span>中</span></li>
-            <li><a href="https://www.deep-ml.com/problems/1074" lang="en">Recursively Replace Linear Layers with LoRA</a><span>中</span></li>
-            <li><a href="https://www.deep-ml.com/problems/1069" lang="en">Preference Dataset Collate Function for DPO</a><span>难</span></li>
-            <li><a href="https://www.deep-ml.com/problems/382" lang="en">Direct Preference Optimization (DPO) Loss</a><span>中</span></li>
-            <li><a href="https://www.deep-ml.com/problems/361" lang="en">Fine-Tune Model Weights with RLHF Policy Gradient</a><span>中</span></li>
-            <li><a href="https://www.deep-ml.com/problems/2356" lang="en">Is the Difference Real? Comparing Two Checkpoints on a Benchmark Across Seeds</a><span>中</span></li>
-            </ul>
-            <p>题库只覆盖 loss 和模块，完整跑一次 LoRA SFT 要自己做。</p>
-          </dd></div>
         </dl>
+        <div class="more">
+          <details class="notes">
+            <summary><span class="seal">讲</span><span class="what">要点和检查代码</span></summary>
+            <div class="inner">
+            <ul class="points">
+              <li>SFT 的 loss 和预训练是同一个，换的是数据：「指令 → 回答」。通常只在回答部分的 token 上算 loss，prompt 部分 mask 掉。</li>
+              <li>LoRA 冻结原权重 W，只学一个低秩的增量：<code>ΔW = (α / r) · B · A</code>。B 从 0 开始，所以刚接上时模型的输出和原来完全一样。</li>
+              <li>偏好数据是三元组：prompt、好的回答 y⁺、差的回答 y⁻。DPO 的 loss 是 <code>−log σ(β · [(log π(y⁺|x) − log π_ref(y⁺|x)) − (log π(y⁻|x) − log π_ref(y⁻|x))])</code>。</li>
+              <li>RL（策略梯度）的目标是最大化期望奖励 <code>E[r(x, y)]</code>：要在线采样，要有奖励函数。DPO 是离线的，只需要成对比较，形式上是一个二分类 loss。</li>
+              <li>评估要固定一组没训练过的 prompts 和采样参数，训练前后各生成一次再比。训练 loss 降了只说明拟合了训练集。</li>
+            </ul>
+            <pre><code>import math, torch, torch.nn as nn
+
+class LoRALinear(nn.Module):
+    def __init__(self, base: nn.Linear, r=8, alpha=16):
+        super().__init__()
+        self.base = base
+        for p in base.parameters():
+            p.requires_grad_(False)                # 原权重冻住
+        self.A = nn.Parameter(torch.empty(r, base.in_features))
+        self.B = nn.Parameter(torch.zeros(base.out_features, r))   # B 从 0 开始
+        nn.init.kaiming_uniform_(self.A, a=math.sqrt(5))
+        self.scale = alpha / r
+
+    def forward(self, x):
+        return self.base(x) + self.scale * (x @ self.A.T @ self.B.T)
+
+base = nn.Linear(64, 64)
+x = torch.randn(4, 64)
+want = base(x)
+lora = LoRALinear(base)
+
+# 检查 1：刚包上 LoRA 时，输出和原来完全一样
+assert torch.equal(lora(x), want)
+
+# 检查 2：只有 A 和 B 在训练
+assert [n for n, p in lora.named_parameters() if p.requires_grad] == ["A", "B"]</code></pre>
+            <p class="aside">这段代码只检查 LoRA 接对了。阶段的验收是另一件事：固定留出 prompts 和采样参数，训练前后各生成一次，逐条对比。</p>
+            </div>
+          </details>
+          <details class="drill">
+            <summary><span class="seal">练</span><span class="what">练习题</span><span class="count" data-count></span></summary>
+            <div class="inner">
+            <h3>基础</h3>
+            <ul class="probs">
+              <li><input type="checkbox" data-pid="867" aria-label="做完了：Calculate LoRA Trainable Parameter Count vs Full Fine-Tuning"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/867" lang="en">Calculate LoRA Trainable Parameter Count vs Full Fine-Tuning</a></li>
+              <li><input type="checkbox" data-pid="222" aria-label="做完了：LoRA: Low-Rank Adaptation Forward Pass"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/222" lang="en">LoRA: Low-Rank Adaptation Forward Pass</a></li>
+              <li><input type="checkbox" data-pid="866" aria-label="做完了：Merge LoRA Adapter Weights for Zero-Latency Inference"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/866" lang="en">Merge LoRA Adapter Weights for Zero-Latency Inference</a></li>
+              <li><input type="checkbox" data-pid="795" aria-label="做完了：Masked Cross-Entropy Loss for Supervised Finetuning"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/795" lang="en">Masked Cross-Entropy Loss for Supervised Finetuning</a></li>
+              <li><input type="checkbox" data-pid="2060" aria-label="做完了：Multi-Turn SFT Loss Masks and Conversation Unrolling"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/2060" lang="en">Multi-Turn SFT Loss Masks and Conversation Unrolling</a></li>
+              <li><input type="checkbox" data-pid="1068" aria-label="做完了：DPO Implicit Reward Computation"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/1068" lang="en">DPO Implicit Reward Computation</a></li>
+              <li><input type="checkbox" data-pid="224" aria-label="做完了：Group Relative Advantage for GRPO"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/224" lang="en">Group Relative Advantage for GRPO</a></li>
+            </ul>
+            <h3>进阶</h3>
+            <ul class="probs">
+              <li><input type="checkbox" data-pid="1074" aria-label="做完了：Recursively Replace Linear Layers with LoRA"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/1074" lang="en">Recursively Replace Linear Layers with LoRA</a></li>
+              <li><input type="checkbox" data-pid="1065" aria-label="做完了：Custom Collate Function for Instruction Finetuning"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/1065" lang="en">Custom Collate Function for Instruction Finetuning</a></li>
+              <li><input type="checkbox" data-pid="1069" aria-label="做完了：Preference Dataset Collate Function for DPO"><span class="lv">难</span><a href="https://www.deep-ml.com/problems/1069" lang="en">Preference Dataset Collate Function for DPO</a></li>
+              <li><input type="checkbox" data-pid="382" aria-label="做完了：Direct Preference Optimization (DPO) Loss"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/382" lang="en">Direct Preference Optimization (DPO) Loss</a></li>
+              <li><input type="checkbox" data-pid="2073" aria-label="做完了：The DPO Gradient: How Much Each Preference Pair Pushes"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2073" lang="en">The DPO Gradient: How Much Each Preference Pair Pushes</a></li>
+              <li><input type="checkbox" data-pid="361" aria-label="做完了：Fine-Tune Model Weights with RLHF Policy Gradient"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/361" lang="en">Fine-Tune Model Weights with RLHF Policy Gradient</a></li>
+              <li><input type="checkbox" data-pid="485" aria-label="做完了：PPO Clipped Surrogate Loss with Clip Diagnostics"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/485" lang="en">PPO Clipped Surrogate Loss with Clip Diagnostics</a></li>
+              <li><input type="checkbox" data-pid="2356" aria-label="做完了：Is the Difference Real? Comparing Two Checkpoints on a Benchmark Across Seeds"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2356" lang="en">Is the Difference Real? Comparing Two Checkpoints on a Benchmark Across Seeds</a></li>
+            </ul>
+            <p class="aside">题库只覆盖 loss 和模块，完整跑一次 LoRA SFT 要自己做。</p>
+            </div>
+          </details>
+          <details class="quiz">
+            <summary><span class="seal">问</span><span class="what">自测问答</span><span class="count">6 题</span></summary>
+            <div class="inner">
+            <details class="qa"><summary>LoRA 的 B 为什么初始化成 0，A 却是随机的？</summary><p>B = 0 让 ΔW 一开始是 0，微调从原模型的行为出发。A 必须非零：如果 A 和 B 都是 0，两边的梯度也都是 0，永远学不动。</p></details>
+            <details class="qa"><summary>r = 8 的 LoRA 加在一个 4096×4096 的线性层上，多了多少可训练参数？</summary><p>A 是 8×4096，B 是 4096×8，一共 65,536 个，是原来 16.8M 的 0.39%。</p></details>
+            <details class="qa"><summary>DPO 和策略梯度 RL 的目标差在哪？</summary><p>RL 直接最大化奖励的期望，需要从当前策略采样，再用奖励给样本加权。DPO 不采样、不需要显式奖励，只让好回答相对差回答的对数概率差变大。它隐含的奖励是 <code>β · log(π / π_ref)</code>。</p></details>
+            <details class="qa"><summary>DPO 里的参考模型 π_ref 起什么作用？</summary><p>DPO 是从「带 KL 约束的奖励最大化」推出来的，π_ref 就是那个约束的锚点，限制模型不要离原来太远。去掉它，loss 只比较两个回答的对数概率，不再约束模型整体漂多远。</p></details>
+            <details class="qa"><summary>为什么不能只看训练 loss？</summary><p>训练 loss 降说明拟合了训练样本，可能是学会了，也可能是背下来了。没见过的 prompt 上行为可能没变，甚至原有能力变差。要在留出 prompts 上比实际生成的结果。</p></details>
+            <details class="qa"><summary>SFT 时为什么把 prompt 部分的 loss mask 掉？</summary><p>目标是「给定指令，生成回答」，不是学会生成指令。prompt 很长时，它的 loss 会盖过回答部分的信号。</p></details>
+            </div>
+          </details>
+        </div>
+        </div>
       </li>
 
       <li class="stage" id="s4" data-status="todo">
@@ -346,23 +586,83 @@
           <h2>推理与 Infra</h2>
           <p class="state"></p>
         </div>
+        <div class="body">
         <dl class="parts">
           <div class="learn"><dt>学</dt><dd>采样、KV cache、prefill/decode、batching；理解量化和并行在省什么。</dd></div>
           <div class="build"><dt>做</dt><dd>实现 KV cache。</dd></div>
           <div class="check"><dt>验</dt><dd>先验证 logits 与无 cache 的版本一致，再量延迟和显存。</dd></div>
-          <div class="drill"><dt>练</dt><dd>
-            <ul>
-            <li><a href="https://www.deep-ml.com/problems/419" lang="en">Combined Token Sampling Pipeline (Temperature + Top-k + Top-p)</a><span>难</span></li>
-            <li><a href="https://www.deep-ml.com/problems/1345" lang="en">A KV Cache for Autoregressive Decoding</a><span>难</span></li>
-            <li><a href="https://www.deep-ml.com/problems/417" lang="en">Classify LLM Prefill vs Decode as Compute-Bound or Memory-Bound</a><span>中</span></li>
-            <li><a href="https://www.deep-ml.com/problems/425" lang="en">Continuous Batching (In-Flight Batching) Simulator</a><span>中</span></li>
-            <li><a href="https://www.deep-ml.com/problems/411" lang="en">Compute TTFT ITL and TPS from a Token Timestamp Stream</a><span>易</span></li>
-            <li><a href="https://www.deep-ml.com/problems/418" lang="en">Estimate KV Cache Size from Model Config</a><span>中</span></li>
-            <li><a href="https://www.deep-ml.com/problems/294" lang="en">Implement INT8 Quantization</a><span>中</span></li>
-            <li><a href="https://www.deep-ml.com/problems/438" lang="en">Tensor Parallelism All-Reduce Communication Cost</a><span>中</span></li>
-            </ul>
-          </dd></div>
         </dl>
+        <div class="more">
+          <details class="notes">
+            <summary><span class="seal">讲</span><span class="what">要点和检查代码</span></summary>
+            <div class="inner">
+            <ul class="points">
+              <li>采样的流程：logits 除以温度 T，按 top-k 或 top-p 截断，softmax，再抽样。T 趋近 0 就是贪心。</li>
+              <li>KV cache：自回归生成时，旧位置的 K 和 V 不会再变，所以每步只算新 token 的 Q、K、V，再和缓存里的 K、V 做注意力。每步的注意力计算量从 O(t²) 降到 O(t)。</li>
+              <li>Prefill 一次前向处理整个 prompt，token 之间可以并行，瓶颈在算力。Decode 每步只出一个 token，却要把全部权重和 cache 读一遍，瓶颈在内存带宽。所以首 token 延迟主要看 prefill，之后每个 token 的延迟看 decode。</li>
+              <li>Batching 把多个请求拼进同一次前向，用单个请求的延迟换整体吞吐。Continuous batching 让请求随时进出，不用等一整批结束。</li>
+              <li>量化减少每个权重的位数，省的是显存和每步要读的字节数。并行（tensor parallel、pipeline parallel）让单卡放不下的模型能跑，代价是卡之间的通信。</li>
+              <li>KV cache 的大小：<code>2 × 层数 × batch × 序列长度 × 头数 × 每头维度 × 每个数的字节数</code>。</li>
+            </ul>
+            <pre><code>import torch
+
+@torch.no_grad()
+def check_kv_cache(forward, forward_cached, prompt, new_tokens=20):
+    # forward(x) -&gt; logits (B, T, V)，每次把整个序列重算一遍
+    # forward_cached(x_new, cache) -&gt; (logits, cache)，cache=None 表示从头开始
+    x, ref = prompt.clone(), []
+    for _ in range(new_tokens):
+        last = forward(x)[:, -1]
+        ref.append(last)
+        x = torch.cat([x, last.argmax(-1, keepdim=True)], dim=1)
+
+    logits, cache = forward_cached(prompt, None)                 # prefill：一次处理整个 prompt
+    for i in range(new_tokens):
+        last = logits[:, -1]
+        assert torch.allclose(last, ref[i], atol=1e-4), f"第 {i} 步 logits 不一致"
+        logits, cache = forward_cached(last.argmax(-1, keepdim=True), cache)   # decode：只喂一个 token</code></pre>
+            <p class="aside">最常见的错：带 cache 时位置编码还从 0 开始算，第 1 步就会对不上。一致性通过之后再量性能：GPU 上计时前后要 <code>torch.cuda.synchronize()</code>，丢掉前几次预热；显存看 <code>torch.cuda.max_memory_allocated()</code>。</p>
+            </div>
+          </details>
+          <details class="drill">
+            <summary><span class="seal">练</span><span class="what">练习题</span><span class="count" data-count></span></summary>
+            <div class="inner">
+            <h3>基础</h3>
+            <ul class="probs">
+              <li><input type="checkbox" data-pid="378" aria-label="做完了：Temperature Sampling"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/378" lang="en">Temperature Sampling</a></li>
+              <li><input type="checkbox" data-pid="383" aria-label="做完了：Top-p (Nucleus) Sampling"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/383" lang="en">Top-p (Nucleus) Sampling</a></li>
+              <li><input type="checkbox" data-pid="411" aria-label="做完了：Compute TTFT ITL and TPS from a Token Timestamp Stream"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/411" lang="en">Compute TTFT ITL and TPS from a Token Timestamp Stream</a></li>
+              <li><input type="checkbox" data-pid="418" aria-label="做完了：Estimate KV Cache Size from Model Config"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/418" lang="en">Estimate KV Cache Size from Model Config</a></li>
+              <li><input type="checkbox" data-pid="376" aria-label="做完了：KV Cache for Efficient Autoregressive Attention"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/376" lang="en">KV Cache for Efficient Autoregressive Attention</a></li>
+              <li><input type="checkbox" data-pid="294" aria-label="做完了：Implement INT8 Quantization"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/294" lang="en">Implement INT8 Quantization</a></li>
+              <li><input type="checkbox" data-pid="780" aria-label="做完了：Pipeline Parallelism Bubble Ratio Calculator"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/780" lang="en">Pipeline Parallelism Bubble Ratio Calculator</a></li>
+            </ul>
+            <h3>进阶</h3>
+            <ul class="probs">
+              <li><input type="checkbox" data-pid="419" aria-label="做完了：Combined Token Sampling Pipeline (Temperature + Top-k + Top-p)"><span class="lv">难</span><a href="https://www.deep-ml.com/problems/419" lang="en">Combined Token Sampling Pipeline (Temperature + Top-k + Top-p)</a></li>
+              <li><input type="checkbox" data-pid="1345" aria-label="做完了：A KV Cache for Autoregressive Decoding"><span class="lv">难</span><a href="https://www.deep-ml.com/problems/1345" lang="en">A KV Cache for Autoregressive Decoding</a></li>
+              <li><input type="checkbox" data-pid="1055" aria-label="做完了：Greedy Streaming Decoder with KV Cache"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/1055" lang="en">Greedy Streaming Decoder with KV Cache</a></li>
+              <li><input type="checkbox" data-pid="417" aria-label="做完了：Classify LLM Prefill vs Decode as Compute-Bound or Memory-Bound"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/417" lang="en">Classify LLM Prefill vs Decode as Compute-Bound or Memory-Bound</a></li>
+              <li><input type="checkbox" data-pid="425" aria-label="做完了：Continuous Batching (In-Flight Batching) Simulator"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/425" lang="en">Continuous Batching (In-Flight Batching) Simulator</a></li>
+              <li><input type="checkbox" data-pid="429" aria-label="做完了：Quantization Quality Check via Perplexity Delta"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/429" lang="en">Quantization Quality Check via Perplexity Delta</a></li>
+              <li><input type="checkbox" data-pid="438" aria-label="做完了：Tensor Parallelism All-Reduce Communication Cost"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/438" lang="en">Tensor Parallelism All-Reduce Communication Cost</a></li>
+            </ul>
+            </div>
+          </details>
+          <details class="quiz">
+            <summary><span class="seal">问</span><span class="what">自测问答</span><span class="count">7 题</span></summary>
+            <div class="inner">
+            <details class="qa"><summary>为什么用了 KV cache，结果和不用完全一致？</summary><p>Causal mask 下，旧位置每一层的输出只依赖它之前的位置，新 token 进来不会改变它们，所以它们的 K 和 V 可以原样复用。新位置要用的正好就是这些 K、V。浮点运算顺序不同会带来 1e-5 量级的差别，所以比较时用 allclose。</p></details>
+            <details class="qa"><summary>为什么只缓存 K 和 V，不缓存 Q？</summary><p>位置 t 的 Q 只在算位置 t 自己的输出时用一次。后面的位置用的是它们自己的 Q，去查前面所有位置的 K 和 V。</p></details>
+            <details class="qa"><summary>Prefill 和 decode 的瓶颈为什么不一样？</summary><p>Prefill 一次处理很多 token，矩阵乘法的规模大，GPU 的算力被吃满。Decode 一次只处理一个 token，计算量很小，但每一步仍然要把所有权重和 cache 从显存读一遍，时间主要花在读内存上。</p></details>
+            <details class="qa"><summary>Temperature、top-k、top-p 各在做什么？</summary><p>Temperature 缩放 logits，控制分布有多尖。Top-k 只保留概率最高的 k 个 token。Top-p 保留累计概率刚好超过 p 的最小集合，候选的个数会随分布变化。</p></details>
+            <details class="qa"><summary>量化省的是什么？</summary><p>权重占的显存，以及 decode 每步要读的字节数，所以受内存带宽限制的 decode 也会变快。代价是精度，要用 perplexity 或下游任务确认损失了多少。</p></details>
+            <details class="qa"><summary>Batch 变大，延迟和吞吐怎么变？</summary><p>吞吐上升，直到算力或内存带宽饱和；单个请求的延迟上升。静态 batching 还要等凑齐一批、等最长的那条结束，continuous batching 解决的就是这个。</p></details>
+            <details class="qa"><summary>12 层、12 头、每头 64 维、fp16，1024 个 token，batch 为 1，KV cache 多大？</summary><p>2 × 12 × 1024 × 12 × 64 × 2 字节 ≈ 36 MB。它随序列长度和 batch 线性增长，上下文翻倍就翻倍。</p></details>
+            </div>
+          </details>
+        </div>
+        </div>
       </li>
 
       <li class="stage" id="s5" data-status="todo">
@@ -371,21 +671,88 @@
           <h2>Agent / CUA</h2>
           <p class="state"></p>
         </div>
+        <div class="body">
         <dl class="parts">
           <div class="learn"><dt>学</dt><dd>给模型接工具、状态、超时、重试和日志。</dd></div>
           <div class="build"><dt>做</dt><dd>在一个可控网页里跑任务。</dd></div>
           <div class="check"><dt>验</dt><dd>每一步都有记录：它看到什么、做了什么、环境怎么回应。</dd></div>
-          <div class="drill"><dt>练</dt><dd>
-            <ul>
-            <li><a href="https://www.deep-ml.com/problems/2171" lang="en">ReAct Agent Loop: Parse Actions, Call Tools, Feed Back Observations</a><span>中</span></li>
-            <li><a href="https://www.deep-ml.com/problems/2172" lang="en">Validate and Execute Model Tool Calls into Chat History</a><span>中</span></li>
-            <li><a href="https://www.deep-ml.com/problems/2184" lang="en">A Stateful Graph Engine for Agent Workflows</a><span>中</span></li>
-            <li><a href="https://www.deep-ml.com/problems/2200" lang="en">Async API Call with Retries, Exponential Backoff and Retry-After</a><span>中</span></li>
-            <li><a href="https://www.deep-ml.com/problems/2370" lang="en">Structured Output: Validate Against a Schema, Retry With the Errors</a><span>中</span></li>
-            </ul>
-            <p>题库里没有网页或 computer-use 的题，可控网页环境要自己搭。</p>
-          </dd></div>
         </dl>
+        <div class="more">
+          <details class="notes">
+            <summary><span class="seal">讲</span><span class="what">要点和检查代码</span></summary>
+            <div class="inner">
+            <ul class="points">
+              <li>Agent 循环：观察环境，模型输出一个动作，harness 解析并执行，把结果作为新的观察放回上下文。一直循环到模型说完成，或者步数用完。</li>
+              <li>工具是带 schema 的函数。模型输出的调用要先校验工具名和参数；校验失败时把错误信息返回给模型，而不是让程序崩掉。</li>
+              <li>状态有两份：环境状态（网页现在是什么样）和 agent 状态（对话历史、已经走了几步）。两份都要能保存和重放。</li>
+              <li>每次工具调用都设超时。只重试可重试的错误（超时、限流），重试要有次数上限和退避。有副作用的动作，重试之前先看一眼环境，确认上一次到底有没有生效。</li>
+              <li>日志每步一行：步号、模型看到的观察、模型的原始输出、解析出的动作、环境的返回、耗时、错误。之后给失败归因全靠它。</li>
+              <li>CUA 的观察是截图或 DOM / accessibility tree，动作是点击、输入、滚动。页面没加载完时同一个动作会失败，所以执行前后都要重新观察。</li>
+            </ul>
+            <pre><code>import json, time
+
+def run_episode(model, env, tools, max_steps=20, timeout_s=10, log_path="run.jsonl"):
+    obs = env.reset()
+    history = []
+    with open(log_path, "w") as log:
+        for step in range(max_steps):
+            raw = model(history, obs)              # 模型的原始输出，先原样记下来
+            rec = {"step": step, "obs": obs, "raw": raw}
+            t0 = time.time()
+            try:
+                action = json.loads(raw)           # 约定格式：{"tool": ..., "args": {...}}
+                if action["tool"] == "done":
+                    rec["result"] = "done"
+                    log.write(json.dumps(rec, ensure_ascii=False) + "\n")
+                    break
+                result = tools[action["tool"]](env, timeout=timeout_s, **action["args"])
+            except Exception as e:                 # 解析失败、未知工具、超时：都回给模型
+                result = f"error: {type(e).__name__}: {e}"
+            rec.update(result=result, seconds=round(time.time() - t0, 3))
+            log.write(json.dumps(rec, ensure_ascii=False) + "\n")
+            history.append((obs, raw, result))
+            obs = env.observe()
+    return env                                     # 成没成功，交给独立检查器看环境状态</code></pre>
+            <p class="aside"><code>obs</code> 要能写进 JSON：如果是截图，就存成文件，日志里记路径。工具函数自己负责遵守 <code>timeout</code>。</p>
+            </div>
+          </details>
+          <details class="drill">
+            <summary><span class="seal">练</span><span class="what">练习题</span><span class="count" data-count></span></summary>
+            <div class="inner">
+            <h3>基础</h3>
+            <ul class="probs">
+              <li><input type="checkbox" data-pid="1034" aria-label="做完了：Chat Template Encoding for Instruct Models"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/1034" lang="en">Chat Template Encoding for Instruct Models</a></li>
+              <li><input type="checkbox" data-pid="2171" aria-label="做完了：ReAct Agent Loop: Parse Actions, Call Tools, Feed Back Observations"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2171" lang="en">ReAct Agent Loop: Parse Actions, Call Tools, Feed Back Observations</a></li>
+              <li><input type="checkbox" data-pid="2172" aria-label="做完了：Validate and Execute Model Tool Calls into Chat History"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2172" lang="en">Validate and Execute Model Tool Calls into Chat History</a></li>
+              <li><input type="checkbox" data-pid="2260" aria-label="做完了：Retry Decorator with Exponential Backoff"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2260" lang="en">Retry Decorator with Exponential Backoff</a></li>
+              <li><input type="checkbox" data-pid="2168" aria-label="做完了：Trim Chat History to a Token Budget"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/2168" lang="en">Trim Chat History to a Token Budget</a></li>
+              <li><input type="checkbox" data-pid="2370" aria-label="做完了：Structured Output: Validate Against a Schema, Retry With the Errors"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2370" lang="en">Structured Output: Validate Against a Schema, Retry With the Errors</a></li>
+            </ul>
+            <h3>进阶</h3>
+            <ul class="probs">
+              <li><input type="checkbox" data-pid="2184" aria-label="做完了：A Stateful Graph Engine for Agent Workflows"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2184" lang="en">A Stateful Graph Engine for Agent Workflows</a></li>
+              <li><input type="checkbox" data-pid="2200" aria-label="做完了：Async API Call with Retries, Exponential Backoff and Retry-After"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2200" lang="en">Async API Call with Retries, Exponential Backoff and Retry-After</a></li>
+              <li><input type="checkbox" data-pid="2094" aria-label="做完了：Bounded Concurrency with Exponential-Backoff Retries"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2094" lang="en">Bounded Concurrency with Exponential-Backoff Retries</a></li>
+              <li><input type="checkbox" data-pid="2414" aria-label="做完了：Context Compaction: Keep a Tool-Call Trajectory Under a Token Budget"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2414" lang="en">Context Compaction: Keep a Tool-Call Trajectory Under a Token Budget</a></li>
+              <li><input type="checkbox" data-pid="2156" aria-label="做完了：Multi-Agent Watchdog: Repetition Loops and Wait-For Deadlocks"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2156" lang="en">Multi-Agent Watchdog: Repetition Loops and Wait-For Deadlocks</a></li>
+              <li><input type="checkbox" data-pid="2372" aria-label="做完了：An Agent Permission Gate: Untrusted Content Cannot Trigger Risky Tools"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2372" lang="en">An Agent Permission Gate: Untrusted Content Cannot Trigger Risky Tools</a></li>
+            </ul>
+            <p class="aside">题库里没有网页或 computer-use 的题，可控网页环境要自己搭。</p>
+            </div>
+          </details>
+          <details class="quiz">
+            <summary><span class="seal">问</span><span class="what">自测问答</span><span class="count">6 题</span></summary>
+            <div class="inner">
+            <details class="qa"><summary>工具调用失败时，harness 该怎么办？</summary><p>先分类。超时、限流、网络错误：退避后重试，有次数上限。模型的错（参数不对、工具不存在）：把错误原样返回给模型，让它改。环境坏了无法恢复：终止并记录。三种情况都要写日志。</p></details>
+            <details class="qa"><summary>什么样的动作不能直接重试？</summary><p>有副作用而且不幂等的：提交表单、下单、发消息。超时不等于没执行。重试之前先观察环境，确认上一次的结果。</p></details>
+            <details class="qa"><summary>任务有没有完成，为什么不能听 agent 自己说？</summary><p>模型会在没做完时说做完了，也会反过来。完成与否要由独立的检查器去读环境的最终状态来判定。</p></details>
+            <details class="qa"><summary>日志里至少要有什么，事后才能定位失败？</summary><p>每一步模型看到的观察、模型的原始输出、解析出的动作、环境的返回、耗时和错误。缺了原始输出，就分不清是模型说错了还是解析错了。</p></details>
+            <details class="qa"><summary>上下文越来越长怎么办？</summary><p>压缩或丢掉旧的观察，尤其是很大的 DOM 和截图；保留任务说明和最近几步。尽量只在末尾追加：改动前面的内容会让 KV cache 的前缀失效，后面全部要重算。</p></details>
+            <details class="qa"><summary>为什么强调「可控」的网页？</summary><p>为了可复现。每次都能回到同一个初始状态，没有外部变化，检查器能读到真实状态。否则两次运行结果不同，分不清是 agent 的原因还是环境的原因。</p></details>
+            </div>
+          </details>
+        </div>
+        </div>
       </li>
 
       <li class="stage" id="s6" data-status="todo">
@@ -394,29 +761,95 @@
           <h2>Evals 与面试</h2>
           <p class="state"></p>
         </div>
+        <div class="body">
         <dl class="parts">
           <div class="learn"><dt>学</dt><dd>用独立检查器判定任务是否完成。</dd></div>
           <div class="build"><dt>做</dt><dd>固定模型，对比两版 harness。</dd></div>
           <div class="check"><dt>验</dt><dd>每个失败都归进三类之一：规划、工具执行、评分。</dd></div>
           <div class="learn"><dt>交</dt><dd>整理一页项目说明，和之前做 agent 评测的经历接起来。</dd></div>
-          <div class="drill"><dt>练</dt><dd>
-            <ul>
-            <li><a href="https://www.deep-ml.com/problems/324" lang="en">Code Execution Verifier for Programming Benchmarks</a><span>中</span></li>
-            <li><a href="https://www.deep-ml.com/problems/2155" lang="en">Agent Trajectory Metrics: Completion, Tool Precision and Recall, Efficiency</a><span>中</span></li>
-            <li><a href="https://www.deep-ml.com/problems/2402" lang="en">pass^k: Reliability over Repeated Trials versus pass@k</a><span>中</span></li>
-            <li><a href="https://www.deep-ml.com/problems/2311" lang="en">McNemar's Test: Is One Classifier Really Better on the Same Test Set?</a><span>易</span></li>
-            <li><a href="https://www.deep-ml.com/problems/1337" lang="en">Cohen's Kappa and Judge Position Bias</a><span>易</span></li>
-            </ul>
-            <p>把失败归成规划、工具执行、评分三类，没有对应的题，要自己读日志。</p>
-          </dd></div>
         </dl>
+        <div class="more">
+          <details class="notes">
+            <summary><span class="seal">讲</span><span class="what">要点和检查代码</span></summary>
+            <div class="inner">
+            <ul class="points">
+              <li>检查器独立于 agent：它不读 agent 的自述，只读环境的最终状态（页面、数据库、文件），返回是否通过和原因。</li>
+              <li>对比两版 harness 时，模型、任务集、采样参数、初始状态全部固定，只换 harness。每个任务跑多次，因为同一个配置的结果本身就会波动。</li>
+              <li>两版跑的是同一批任务，结果是配对的，要用配对的方法比（McNemar 检验或配对 bootstrap）。只比两个总成功率，看不出差别是不是真的。</li>
+              <li>失败分三类。规划：模型选错了要做的事（误解目标、步骤错、过早停止）。工具执行：要做的事是对的，动作没落地（参数错、超时、点错元素、解析失败）。评分：agent 做对了却被判错，或者做错了被判对。</li>
+              <li>归因按顺序排除：先核对检查器（评分），再看动作有没有按意图执行（工具执行），剩下的才是规划。</li>
+              <li>评分类的问题最先修。检查器有错，其他数字都不可信。</li>
+            </ul>
+            <pre><code>from collections import Counter
+
+def check_task(env_state: dict, expected: dict):
+    """独立检查器：只看环境最终状态，不看 agent 说了什么。"""
+    for key, want in expected.items():
+        got = env_state.get(key)
+        if got != want:
+            return False, f"{key}: 期望 {want!r}，实际 {got!r}"
+    return True, "ok"
+
+def compare(pass_a, pass_b):
+    """同一批任务上两版 harness 的结果，按任务配对。"""
+    assert len(pass_a) == len(pass_b)
+    n = len(pass_a)
+    only_a = sum(a and not b for a, b in zip(pass_a, pass_b))
+    only_b = sum(b and not a for a, b in zip(pass_a, pass_b))
+    return {"A": sum(pass_a) / n, "B": sum(pass_b) / n,
+            "只有 A 过": only_a, "只有 B 过": only_b}    # 两版的差别全在这两个数里
+
+def failure_table(labels):
+    """labels 来自人工读日志，每个失败一个：planning / tool / grading。"""
+    assert set(labels) &lt;= {"planning", "tool", "grading"}
+    return Counter(labels)</code></pre>
+            <p class="aside"><code>failure_table</code> 的输入要靠读日志得到，这一步没有捷径。</p>
+            </div>
+          </details>
+          <details class="drill">
+            <summary><span class="seal">练</span><span class="what">练习题</span><span class="count" data-count></span></summary>
+            <div class="inner">
+            <h3>基础</h3>
+            <ul class="probs">
+              <li><input type="checkbox" data-pid="325" aria-label="做完了：Exact Match Score with Normalization"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/325" lang="en">Exact Match Score with Normalization</a></li>
+              <li><input type="checkbox" data-pid="226" aria-label="做完了：Pass@k and Majority Voting Evaluation Metrics"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/226" lang="en">Pass@k and Majority Voting Evaluation Metrics</a></li>
+              <li><input type="checkbox" data-pid="324" aria-label="做完了：Code Execution Verifier for Programming Benchmarks"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/324" lang="en">Code Execution Verifier for Programming Benchmarks</a></li>
+              <li><input type="checkbox" data-pid="797" aria-label="做完了：Macro-Average Accuracy Across Benchmark Subtasks"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/797" lang="en">Macro-Average Accuracy Across Benchmark Subtasks</a></li>
+              <li><input type="checkbox" data-pid="2311" aria-label="做完了：McNemar&#x27;s Test: Is One Classifier Really Better on the Same Test Set?"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/2311" lang="en">McNemar's Test: Is One Classifier Really Better on the Same Test Set?</a></li>
+              <li><input type="checkbox" data-pid="1337" aria-label="做完了：Cohen&#x27;s Kappa and Judge Position Bias"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/1337" lang="en">Cohen's Kappa and Judge Position Bias</a></li>
+            </ul>
+            <h3>进阶</h3>
+            <ul class="probs">
+              <li><input type="checkbox" data-pid="796" aria-label="做完了：Verifiable Instruction Constraint Checker"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/796" lang="en">Verifiable Instruction Constraint Checker</a></li>
+              <li><input type="checkbox" data-pid="2155" aria-label="做完了：Agent Trajectory Metrics: Completion, Tool Precision and Recall, Efficiency"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2155" lang="en">Agent Trajectory Metrics: Completion, Tool Precision and Recall, Efficiency</a></li>
+              <li><input type="checkbox" data-pid="2402" aria-label="做完了：pass^k: Reliability over Repeated Trials versus pass@k"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2402" lang="en">pass^k: Reliability over Repeated Trials versus pass@k</a></li>
+              <li><input type="checkbox" data-pid="1753" aria-label="做完了：Nonparametric Bootstrap: Standard Errors and Percentile vs Basic Intervals"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/1753" lang="en">Nonparametric Bootstrap: Standard Errors and Percentile vs Basic Intervals</a></li>
+              <li><input type="checkbox" data-pid="2357" aria-label="做完了：An Ablation Table with Seeds: Which Changes Actually Helped?"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2357" lang="en">An Ablation Table with Seeds: Which Changes Actually Helped?</a></li>
+              <li><input type="checkbox" data-pid="317" aria-label="做完了：Rubric-Based LLM Judge Evaluation"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/317" lang="en">Rubric-Based LLM Judge Evaluation</a></li>
+            </ul>
+            <p class="aside">把失败归成规划、工具执行、评分三类，没有对应的题，要自己读日志。</p>
+            </div>
+          </details>
+          <details class="quiz">
+            <summary><span class="seal">问</span><span class="what">自测问答</span><span class="count">6 题</span></summary>
+            <div class="inner">
+            <details class="qa"><summary>为什么需要独立的检查器？</summary><p>Agent 的自述不可靠，用同一个模型给自己打分也会有偏。检查器直接读环境状态，判定标准写在代码里，可以重复运行，也可以被人审查。</p></details>
+            <details class="qa"><summary>固定模型比两版 harness，还要固定什么？</summary><p>任务集、每个任务的初始环境状态、采样参数（温度、seed）、步数和超时预算。工具集也要固定，除非它正是要比的东西。</p></details>
+            <details class="qa"><summary>A 版成功率 62%，B 版 66%，一共 50 个任务。能说 B 更好吗？</summary><p>不能直接说。50 个任务上 4 个点只是 2 个任务。要看配对结果：只有 A 过的和只有 B 过的各有几个；再看同一版重复跑几次，波动有多大。</p></details>
+            <details class="qa"><summary>拿到一个失败，怎么判断它属于规划、工具执行还是评分？</summary><p>先人工看环境的最终状态：任务其实做成了，就是评分问题。没做成，再对照日志里的原始输出和实际执行的动作：模型想做的是对的但没执行成功，是工具执行；模型想做的本身就不对，是规划。</p></details>
+            <details class="qa"><summary>pass@k 和 pass^k 有什么区别？</summary><p>pass@k 是 k 次里至少成功一次，量的是能力上限。pass^k 是 k 次全部成功，量的是可靠性。要上线的 agent 看后者。</p></details>
+            <details class="qa"><summary>一分钟怎么讲这个项目？</summary><p>四句话。做了什么：从训练模型一路做到评测 harness，是一条线。怎么验证：举一个最硬的检查，比如 KV cache 的 logits 一致性。发现了什么：两版 harness 的差别主要来自哪一类失败。和以前的工作有什么联系。</p></details>
+            </div>
+          </details>
+        </div>
+        </div>
       </li>
 
     </ol>
   </main>
 
   <footer>
-    Yuyang Wu 的学习项目。主页在 <a href="https://youngerwu.com">youngerwu.com</a>。练习题来自 <a href="https://www.deep-ml.com/problems">Deep-ML</a>，按内容对应到每个阶段。
+    Yuyang Wu 的学习项目。主页在 <a href="https://youngerwu.com">youngerwu.com</a>。练习题来自 <a href="https://www.deep-ml.com/problems">Deep-ML</a>，按内容对应到每个阶段。做题的勾选只存在这个浏览器里。
   </footer>
 </div>
 
@@ -446,7 +879,35 @@
   };
 
   var done = status.filter(function (s) { return s === 'done'; }).length;
-  document.getElementById('tally').innerHTML = '已验证 <b>' + done + '</b> / ' + stages.length;
+
+  // 做题打卡：勾选状态存在 localStorage
+  var KEY = 'int.youngerwu.solved';
+  var solved = {};
+  try { (JSON.parse(localStorage.getItem(KEY)) || []).forEach(function (id) { solved[id] = true; }); } catch (e) {}
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('.probs input'));
+
+  function tally() {
+    var total = 0;
+    stages.forEach(function (s) {
+      var own = s.querySelectorAll('.probs input');
+      var n = s.querySelectorAll('.probs input:checked').length;
+      total += n;
+      var c = s.querySelector('[data-count]');
+      if (c) c.textContent = n + ' / ' + own.length;
+    });
+    document.getElementById('tally').innerHTML =
+      '<span>已验证 <b>' + done + '</b> / ' + stages.length + '</span>' +
+      '<span>做题 <b>' + total + '</b> / ' + boxes.length + '</span>';
+  }
+  boxes.forEach(function (b) {
+    b.checked = !!solved[b.dataset.pid];
+    b.addEventListener('change', function () {
+      if (b.checked) solved[b.dataset.pid] = true; else delete solved[b.dataset.pid];
+      try { localStorage.setItem(KEY, JSON.stringify(Object.keys(solved))); } catch (e) {}
+      tally();
+    });
+  });
+  tally();
 
   var grid = document.getElementById('mask-grid');
   var note = document.getElementById('mask-note');
