@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>从小 GPT 到 Agent harness：一个贯穿项目</title>
+<meta name="description" content="从零训一个小 GPT，给它做推理优化，最后接上一个能跑任务、能定位失败的 Agent harness。六个阶段，每个阶段都有一个能判对错的检查。">
+<!-- 不让搜索引擎收录。想公开被搜到，删掉下面这一行。 -->
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon-seal.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* 取色自《千里江山图》：石青、石绿，加一点朱砂印泥 */
+    --paper: #eff3f2;
+    --paper-deep: #e3eae9;
+    --ink: #17242b;
+    --ink-soft: #536469;
+    --line: #c3cfce;
+    --azurite: #1f5f8b;
+    --azurite-wash: #d3e2ec;
+    --malachite: #26806c;
+    --cinnabar: #b5362a;
+    --serif: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
+    --sans: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    --cell: clamp(2.1rem, 5.4vw, 3.1rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0f181d;
+      --paper-deep: #16232a;
+      --ink: #e2ebea;
+      --ink-soft: #94a6a8;
+      --line: #2b3d44;
+      --azurite: #74add6;
+      --azurite-wash: #1b3345;
+      --malachite: #5cb8a1;
+      --cinnabar: #dc5b4d;
+    }
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 1.0625rem;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--azurite); text-underline-offset: 0.2em; }
+  :focus-visible { outline: 2px solid var(--azurite); outline-offset: 3px; }
+
+  .wrap { max-width: 66rem; margin: 0 auto; padding: 0 1.5rem; }
+
+  /* 顶栏 */
+  .top {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1.25rem 0;
+    font-size: 0.9rem; color: var(--ink-soft);
+  }
+  .top a { display: inline-flex; align-items: center; gap: 0.6rem; color: inherit; text-decoration: none; }
+  .top a:hover { color: var(--ink); }
+  .top img { width: 1.75rem; height: 1.75rem; border-radius: 3px; }
+  .tally b { font-family: var(--serif); font-weight: 700; color: var(--ink); font-size: 1.05rem; }
+
+  /* 开头 */
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 3rem 4rem;
+    align-items: start;
+    padding: 3.5rem 0 5rem;
+  }
+  h1 {
+    grid-column: 1 / -1;
+    margin: 0;
+    font-family: var(--serif);
+    font-weight: 900;
+    font-size: clamp(2rem, 5.4vw, 4rem);
+    line-height: 1.3;
+    letter-spacing: 0.01em;
+  }
+  /* 三行逐级缩进，和右边的下三角是同一个形状 */
+  h1 span { display: block; }
+  h1 span:nth-child(2) { padding-left: 1em; }
+  h1 span:nth-child(3) { padding-left: 2em; }
+  .lede { max-width: 30em; margin: 0; color: var(--ink-soft); font-size: 1.1rem; }
+
+  /* causal mask */
+  .mask { width: max-content; max-width: 100%; }
+  .mask-grid {
+    display: grid;
+    grid-template-columns: auto repeat(6, var(--cell));
+    gap: 4px;
+    align-items: center;
+  }
+  .mask-grid .col-h, .mask-grid .row-h {
+    font-size: 0.8rem; color: var(--ink-soft); line-height: 1;
+  }
+  .mask-grid .col-h { text-align: center; padding-bottom: 0.25rem; font-family: var(--serif); }
+  .mask-grid .row-h {
+    padding-right: 0.75rem; text-align: right; white-space: nowrap;
+    text-decoration: none;
+  }
+  .mask-grid .row-h:hover { color: var(--ink); }
+  .cell {
+    width: var(--cell); height: var(--cell);
+    border: 0; padding: 0; margin: 0;
+    border-radius: 3px;
+    font: inherit; color: inherit;
+    cursor: pointer;
+    display: grid; place-items: center;
+    text-decoration: none;
+  }
+  .cell.sees { background: var(--azurite-wash); }
+  .cell.sees:hover, .cell.sees[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--azurite); }
+  .cell.masked {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--line);
+    opacity: 0.55;
+  }
+  .cell.masked:hover, .cell.masked[aria-pressed="true"] { opacity: 1; box-shadow: inset 0 0 0 2px var(--ink-soft); }
+  .cell.self {
+    background: var(--azurite); color: var(--paper);
+    font-family: var(--serif); font-weight: 700; font-size: 1.05rem;
+  }
+  .cell.self[data-status="doing"] { background: var(--malachite); }
+  .cell.self[data-status="done"] {
+    background: transparent; color: var(--cinnabar);
+    box-shadow: inset 0 0 0 2.5px var(--cinnabar);
+    transform: rotate(-4deg);
+  }
+  .mask-note {
+    margin: 1.25rem 0 0;
+    width: 0; min-width: 100%;            /* 不让说明文字把格子撑宽 */
+    min-height: 5.6em;
+    font-size: 0.95rem; line-height: 1.7; color: var(--ink-soft);
+  }
+  .mask-note strong { color: var(--ink); font-weight: 600; }
+
+  /* 载入时逐行出现，像自回归解码：一次只多一行 */
+  @media (prefers-reduced-motion: no-preference) {
+    .mask-grid [data-row] { opacity: 0; animation: row-in 0.35s ease-out forwards; animation-delay: calc(var(--r) * 110ms + 150ms); }
+    @keyframes row-in { to { opacity: 1; } }
+    .mask-grid .cell.masked[data-row] { animation-name: row-in-masked; }
+    @keyframes row-in-masked { to { opacity: 0.55; } }
+  }
+
+  /* 六个阶段 */
+  .stages { position: relative; list-style: none; margin: 0; padding: 0 0 2rem; }
+  .stages::before {                         /* 贯穿的那条线 */
+    content: ""; position: absolute; left: 1.25rem; top: 0.5rem; bottom: 0;
+    width: 2px; background: var(--line);
+  }
+  .stage {
+    position: relative;
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 15rem) minmax(0, 1fr);
+    column-gap: 2rem;
+    padding: 0 0 4rem;
+    scroll-margin-top: 1.5rem;
+  }
+  .num {
+    width: 2.5rem; height: 2.5rem;
+    display: grid; place-items: center;
+    background: var(--paper);
+    box-shadow: inset 0 0 0 2px var(--azurite);
+    border-radius: 3px;
+    color: var(--azurite);
+    font-family: var(--serif); font-weight: 700; font-size: 1.15rem; line-height: 1;
+  }
+  .stage[data-status="doing"] .num { background: var(--malachite); box-shadow: none; color: var(--paper); }
+  .stage[data-status="done"]  .num { box-shadow: inset 0 0 0 2.5px var(--cinnabar); color: var(--cinnabar); transform: rotate(-4deg); }
+
+  .stage h2 {
+    margin: 0;
+    font-family: var(--serif); font-weight: 700;
+    font-size: 1.6rem; line-height: 2.5rem; letter-spacing: 0.01em;
+  }
+  .state { margin: 0.35rem 0 0; font-size: 0.9rem; color: var(--ink-soft); }
+  .state::before { content: "未开始"; }
+  .stage[data-status="doing"] .state { color: var(--malachite); }
+  .stage[data-status="doing"] .state::before { content: "进行中"; }
+  .stage[data-status="done"] .state { color: var(--cinnabar); }
+  .stage[data-status="done"] .state::before { content: "已验证"; }
+  .state a { margin-left: 0.75em; }
+
+  .parts { margin: 0.35rem 0 0; display: grid; gap: 0.9rem; }
+  .parts > div { display: grid; grid-template-columns: 1.75rem minmax(0, 1fr); column-gap: 0.9rem; align-items: start; }
+  .parts dt {
+    width: 1.75rem; height: 1.75rem; margin-top: 0.1rem;
+    display: grid; place-items: center;
+    border-radius: 2px;
+    box-shadow: inset 0 0 0 1.5px currentColor;
+    font-family: var(--serif); font-weight: 700; font-size: 0.95rem; line-height: 1;
+    color: var(--ink-soft);
+  }
+  .parts dd { margin: 0; max-width: 34em; }
+  .parts .learn dd { color: var(--ink-soft); }
+  .parts .build dt { color: var(--azurite); }
+  .parts .check dt { color: var(--cinnabar); }
+  .parts .check dd { font-weight: 600; }
+  .parts .drill dt { color: var(--malachite); }
+  .drill ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.3rem; font-size: 0.95rem; line-height: 1.6; }
+  .drill li { display: flex; align-items: baseline; gap: 0.5em; }
+  .drill li span { order: -1; flex: none; font-size: 0.85rem; color: var(--ink-soft); }
+  .drill p { margin: 0.6rem 0 0; font-size: 0.9rem; color: var(--ink-soft); }
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 1.75rem 0 3rem;
+    font-size: 0.9rem; color: var(--ink-soft);
+  }
+
+  @media (max-width: 54rem) {
+    .hero { grid-template-columns: minmax(0, 1fr); padding: 2rem 0 3.5rem; }
+    .stage { grid-template-columns: 2.5rem minmax(0, 1fr); column-gap: 1.25rem; padding-bottom: 3rem; }
+    .stage .parts { grid-column: 2; margin-top: 1.1rem; }
+  }
+  @media (max-width: 30rem) {
+    h1 { font-size: 1.6rem; }
+    h1 span:nth-child(2) { padding-left: 0.5em; }
+    h1 span:nth-child(3) { padding-left: 1em; }
+  }
+  @media (max-width: 26rem) {
+    .wrap { padding: 0 1.1rem; }
+    .mask-grid .row-h { padding-right: 0.5rem; font-size: 0.75rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <a href="https://youngerwu.com"><img src="favicon-seal.png" alt="">Yuyang Wu</a>
+    <span class="tally" id="tally"></span>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>
+        <span>从零训一个小 GPT，</span>
+        <span>优化它的推理，</span>
+        <span>再接上 Agent harness。</span>
+      </h1>
+      <div>
+        <p class="lede">一个项目做六步。每一步只用前面做出来的东西，结束时都有一个能判对错的检查：通过了才往下走。最后得到的 harness 能跑任务，也能说清任务失败在哪。</p>
+      </div>
+
+      <div class="mask" id="mask" hidden>
+        <div class="mask-grid" id="mask-grid"></div>
+        <p class="mask-note" id="mask-note" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <!--
+      更新进度：改每个阶段的 data-status。
+        todo  = 未开始
+        doing = 进行中
+        done  = 已验证（会盖上红印）
+      想挂笔记或代码链接，在 <p class="state"> 里加一个 <a href="...">笔记</a>。
+    -->
+    <ol class="stages">
+
+      <li class="stage" id="s1" data-status="todo">
+        <div class="num">1</div>
+        <div>
+          <h2>Transformer</h2>
+          <p class="state"></p>
+        </div>
+        <dl class="parts">
+          <div class="learn"><dt>学</dt><dd>tokenization、embedding、causal attention、残差和归一化。</dd></div>
+          <div class="build"><dt>做</dt><dd>写一个小 GPT 的 forward。</dd></div>
+          <div class="check"><dt>验</dt><dd>改未来 token，前面位置的 logits 不变。</dd></div>
+          <div class="drill"><dt>练</dt><dd>
+            <ul>
+            <li><a href="https://www.deep-ml.com/problems/380" lang="en">Byte Pair Encoding (BPE) Tokenizer</a><span>中</span></li>
+            <li><a href="https://www.deep-ml.com/problems/946" lang="en">Add Positional Embeddings to Token Embeddings</a><span>易</span></li>
+            <li><a href="https://www.deep-ml.com/problems/957" lang="en">Implement Batched Causal Self-Attention</a><span>中</span></li>
+            <li><a href="https://www.deep-ml.com/problems/109" lang="en">Implement Layer Normalization for Sequence Data</a><span>中</span></li>
+            <li><a href="https://www.deep-ml.com/problems/1056" lang="en">Pre-Norm GPT Transformer Block Forward Pass</a><span>难</span></li>
+            <li><a href="https://www.deep-ml.com/problems/918" lang="en">Build a Tiny GPT</a><span>难</span></li>
+            </ul>
+            <p>「改未来 token」这个检查题库里没有，要自己写一个 assert。</p>
+          </dd></div>
+        </dl>
+      </li>
+
+      <li class="stage" id="s2" data-status="todo">
+        <div class="num">2</div>
+        <div>
+          <h2>预训练</h2>
+          <p class="state"></p>
+        </div>
+        <dl class="parts">
+          <div class="learn"><dt>学</dt><dd>next-token loss、反向传播、AdamW、学习率、数据切分、checkpoint。</dd></div>
+          <div class="build"><dt>做</dt><dd>先让模型过拟合一个 batch。</dd></div>
+          <div class="check"><dt>验</dt><dd>用留出集区分「能训练」和「能泛化」。</dd></div>
+          <div class="drill"><dt>练</dt><dd>
+            <ul>
+            <li><a href="https://www.deep-ml.com/problems/954" lang="en">Construct Next-Token Prediction Targets</a><span>易</span></li>
+            <li><a href="https://www.deep-ml.com/problems/26" lang="en">Implementing Basic Autograd Operations</a><span>中</span></li>
+            <li><a href="https://www.deep-ml.com/problems/169" lang="en">Implement AdamW Optimizer Step</a><span>中</span></li>
+            <li><a href="https://www.deep-ml.com/problems/196" lang="en">Warmup + Cosine Decay Schedule</a><span>中</span></li>
+            <li><a href="https://www.deep-ml.com/problems/1058" lang="en">Random Train/Validation/Test Split with Shuffling</a><span>易</span></li>
+            <li><a href="https://www.deep-ml.com/problems/2346" lang="en">Preflight Checks Before a Long Training Run: Output Shape, Loss at Init, Overfit One Batch</a><span>中</span></li>
+            <li><a href="https://www.deep-ml.com/problems/86" lang="en">Detect Overfitting or Underfitting</a><span>易</span></li>
+            </ul>
+          </dd></div>
+        </dl>
+      </li>
+
+      <li class="stage" id="s3" data-status="todo">
+        <div class="num">3</div>
+        <div>
+          <h2>后训练</h2>
+          <p class="state"></p>
+        </div>
+        <dl class="parts">
+          <div class="learn"><dt>学</dt><dd>SFT、LoRA、偏好数据，再比较 DPO 和 RL 的目标。</dd></div>
+          <div class="build"><dt>做</dt><dd>实际跑一次 LoRA SFT。</dd></div>
+          <div class="check"><dt>验</dt><dd>对同一组留出 prompts 比较训练前后，不只看训练 loss。</dd></div>
+          <div class="drill"><dt>练</dt><dd>
+            <ul>
+            <li><a href="https://www.deep-ml.com/problems/795" lang="en">Masked Cross-Entropy Loss for Supervised Finetuning</a><span>中</span></li>
+            <li><a href="https://www.deep-ml.com/problems/222" lang="en">LoRA: Low-Rank Adaptation Forward Pass</a><span>中</span></li>
+            <li><a href="https://www.deep-ml.com/problems/1074" lang="en">Recursively Replace Linear Layers with LoRA</a><span>中</span></li>
+            <li><a href="https://www.deep-ml.com/problems/1069" lang="en">Preference Dataset Collate Function for DPO</a><span>难</span></li>
+            <li><a href="https://www.deep-ml.com/problems/382" lang="en">Direct Preference Optimization (DPO) Loss</a><span>中</span></li>
+            <li><a href="https://www.deep-ml.com/problems/361" lang="en">Fine-Tune Model Weights with RLHF Policy Gradient</a><span>中</span></li>
+            <li><a href="https://www.deep-ml.com/problems/2356" lang="en">Is the Difference Real? Comparing Two Checkpoints on a Benchmark Across Seeds</a><span>中</span></li>
+            </ul>
+            <p>题库只覆盖 loss 和模块，完整跑一次 LoRA SFT 要自己做。</p>
+          </dd></div>
+        </dl>
+      </li>
+
+      <li class="stage" id="s4" data-status="todo">
+        <div class="num">4</div>
+        <div>
+          <h2>推理与 Infra</h2>
+          <p class="state"></p>
+        </div>
+        <dl class="parts">
+          <div class="learn"><dt>学</dt><dd>采样、KV cache、prefill/decode、batching；理解量化和并行在省什么。</dd></div>
+          <div class="build"><dt>做</dt><dd>实现 KV cache。</dd></div>
+          <div class="check"><dt>验</dt><dd>先验证 logits 与无 cache 的版本一致，再量延迟和显存。</dd></div>
+          <div class="drill"><dt>练</dt><dd>
+            <ul>
+            <li><a href="https://www.deep-ml.com/problems/419" lang="en">Combined Token Sampling Pipeline (Temperature + Top-k + Top-p)</a><span>难</span></li>
+            <li><a href="https://www.deep-ml.com/problems/1345" lang="en">A KV Cache for Autoregressive Decoding</a><span>难</span></li>
+            <li><a href="https://www.deep-ml.com/problems/417" lang="en">Classify LLM Prefill vs Decode as Compute-Bound or Memory-Bound</a><span>中</span></li>
+            <li><a href="https://www.deep-ml.com/problems/425" lang="en">Continuous Batching (In-Flight Batching) Simulator</a><span>中</span></li>
+            <li><a href="https://www.deep-ml.com/problems/411" lang="en">Compute TTFT ITL and TPS from a Token Timestamp Stream</a><span>易</span></li>
+            <li><a href="https://www.deep-ml.com/problems/418" lang="en">Estimate KV Cache Size from Model Config</a><span>中</span></li>
+            <li><a href="https://www.deep-ml.com/problems/294" lang="en">Implement INT8 Quantization</a><span>中</span></li>
+            <li><a href="https://www.deep-ml.com/problems/438" lang="en">Tensor Parallelism All-Reduce Communication Cost</a><span>中</span></li>
+            </ul>
+          </dd></div>
+        </dl>
+      </li>
+
+      <li class="stage" id="s5" data-status="todo">
+        <div class="num">5</div>
+        <div>
+          <h2>Agent / CUA</h2>
+          <p class="state"></p>
+        </div>
+        <dl class="parts">
+          <div class="learn"><dt>学</dt><dd>给模型接工具、状态、超时、重试和日志。</dd></div>
+          <div class="build"><dt>做</dt><dd>在一个可控网页里跑任务。</dd></div>
+          <div class="check"><dt>验</dt><dd>每一步都有记录：它看到什么、做了什么、环境怎么回应。</dd></div>
+          <div class="drill"><dt>练</dt><dd>
+            <ul>
+            <li><a href="https://www.deep-ml.com/problems/2171" lang="en">ReAct Agent Loop: Parse Actions, Call Tools, Feed Back Observations</a><span>中</span></li>
+            <li><a href="https://www.deep-ml.com/problems/2172" lang="en">Validate and Execute Model Tool Calls into Chat History</a><span>中</span></li>
+            <li><a href="https://www.deep-ml.com/problems/2184" lang="en">A Stateful Graph Engine for Agent Workflows</a><span>中</span></li>
+            <li><a href="https://www.deep-ml.com/problems/2200" lang="en">Async API Call with Retries, Exponential Backoff and Retry-After</a><span>中</span></li>
+            <li><a href="https://www.deep-ml.com/problems/2370" lang="en">Structured Output: Validate Against a Schema, Retry With the Errors</a><span>中</span></li>
+            </ul>
+            <p>题库里没有网页或 computer-use 的题，可控网页环境要自己搭。</p>
+          </dd></div>
+        </dl>
+      </li>
+
+      <li class="stage" id="s6" data-status="todo">
+        <div class="num">6</div>
+        <div>
+          <h2>Evals 与面试</h2>
+          <p class="state"></p>
+        </div>
+        <dl class="parts">
+          <div class="learn"><dt>学</dt><dd>用独立检查器判定任务是否完成。</dd></div>
+          <div class="build"><dt>做</dt><dd>固定模型，对比两版 harness。</dd></div>
+          <div class="check"><dt>验</dt><dd>每个失败都归进三类之一：规划、工具执行、评分。</dd></div>
+          <div class="learn"><dt>交</dt><dd>整理一页项目说明，和之前做 agent 评测的经历接起来。</dd></div>
+          <div class="drill"><dt>练</dt><dd>
+            <ul>
+            <li><a href="https://www.deep-ml.com/problems/324" lang="en">Code Execution Verifier for Programming Benchmarks</a><span>中</span></li>
+            <li><a href="https://www.deep-ml.com/problems/2155" lang="en">Agent Trajectory Metrics: Completion, Tool Precision and Recall, Efficiency</a><span>中</span></li>
+            <li><a href="https://www.deep-ml.com/problems/2402" lang="en">pass^k: Reliability over Repeated Trials versus pass@k</a><span>中</span></li>
+            <li><a href="https://www.deep-ml.com/problems/2311" lang="en">McNemar's Test: Is One Classifier Really Better on the Same Test Set?</a><span>易</span></li>
+            <li><a href="https://www.deep-ml.com/problems/1337" lang="en">Cohen's Kappa and Judge Position Bias</a><span>易</span></li>
+            </ul>
+            <p>把失败归成规划、工具执行、评分三类，没有对应的题，要自己读日志。</p>
+          </dd></div>
+        </dl>
+      </li>
+
+    </ol>
+  </main>
+
+  <footer>
+    Yuyang Wu 的学习项目。主页在 <a href="https://youngerwu.com">youngerwu.com</a>。练习题来自 <a href="https://www.deep-ml.com/problems">Deep-ML</a>，按内容对应到每个阶段。
+  </footer>
+</div>
+
+<script>
+(function () {
+  var names = ['Transformer', '预训练', '后训练', '推理', 'Agent', 'Evals'];
+  var stages = Array.prototype.slice.call(document.querySelectorAll('.stage'));
+  var status = stages.map(function (s) { return s.dataset.status || 'todo'; });
+
+  // 第 i 步从第 j 步拿了什么（j < i）
+  var uses = {
+    '2-1': '训练的对象就是第 1 步写的 forward，loss 直接算在它输出的 logits 上。',
+    '3-1': 'LoRA 的低秩矩阵加在第 1 步那些线性层上，原权重冻住不动。',
+    '3-2': 'SFT 的 loss 还是第 2 步的 next-token loss，换的只是数据；留出集的做法也照搬。',
+    '4-1': 'KV cache 存的是第 1 步 attention 里的 key 和 value。能缓存，正是因为 causal mask 保证旧位置的结果不随新 token 改变。',
+    '4-2': '要有一个训好的 checkpoint，采样和测延迟才有意义。',
+    '4-3': '第 3 步比较训练前后要成批生成，这里把生成变快。',
+    '5-1': '工具调用也是 next-token 预测：模型生成一段文本，harness 把它解析成动作。',
+    '5-2': 'checkpoint 的习惯搬过来：长任务中途失败，要能从保存的状态接着跑。',
+    '5-3': '模型按什么格式调用工具，是后训练教的。',
+    '5-4': '一个任务要调模型很多轮，前缀越来越长，KV cache 和 prefill/decode 的差别在这里最明显。',
+    '6-1': '讲项目时从最底层讲起：attention 为什么必须是 causal 的。',
+    '6-2': '留出集区分「能训练」和「能泛化」，独立检查器区分「看起来完成」和「真的完成」。',
+    '6-3': '和第 3 步同一个思路：其他都固定，只换一个变量，再比前后。',
+    '6-4': '固定采样参数，两版 harness 的差别才能归到 harness 上。',
+    '6-5': '评的就是第 5 步的 harness，证据是它留下的日志。'
+  };
+
+  var done = status.filter(function (s) { return s === 'done'; }).length;
+  document.getElementById('tally').innerHTML = '已验证 <b>' + done + '</b> / ' + stages.length;
+
+  var grid = document.getElementById('mask-grid');
+  var note = document.getElementById('mask-note');
+  var intro = '这是一张 causal mask：每一行是一个阶段，它只看得到自己左边的阶段。点一个格子，看这一步从前面拿了什么。';
+  var pressed = null;
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function say(head, body) {
+    note.textContent = '';
+    if (head) { note.appendChild(el('strong', null, head)); note.appendChild(document.createTextNode(' ')); }
+    note.appendChild(document.createTextNode(body));
+  }
+
+  grid.appendChild(el('span'));
+  for (var c = 1; c <= 6; c++) {
+    var h = el('span', 'col-h', String(c));
+    h.setAttribute('aria-hidden', 'true');
+    grid.appendChild(h);
+  }
+
+  for (var i = 1; i <= 6; i++) {
+    var rh = el('a', 'row-h', names[i - 1]);
+    rh.href = '#s' + i;
+    rh.dataset.row = i; rh.style.setProperty('--r', i - 1);
+    grid.appendChild(rh);
+
+    for (var j = 1; j <= 6; j++) {
+      var cell;
+      if (i === j) {
+        cell = el('a', 'cell self', status[i - 1] === 'done' ? '验' : String(i));
+        cell.href = '#s' + i;
+        cell.dataset.status = status[i - 1];
+        cell.setAttribute('aria-label', '第 ' + i + ' 步：' + names[i - 1]);
+      } else {
+        cell = el('button', 'cell ' + (j < i ? 'sees' : 'masked'));
+        cell.type = 'button';
+        cell.setAttribute('aria-pressed', 'false');
+        cell.setAttribute('aria-label', j < i
+          ? '第 ' + i + ' 步用到第 ' + j + ' 步'
+          : '第 ' + i + ' 步看不到第 ' + j + ' 步');
+        (function (i, j, cell) {
+          cell.addEventListener('click', function () {
+            if (pressed) pressed.setAttribute('aria-pressed', 'false');
+            pressed = cell; cell.setAttribute('aria-pressed', 'true');
+            if (j < i) say(names[i - 1] + ' 用到 ' + names[j - 1] + '。', uses[i + '-' + j]);
+            else say('被 mask 掉了。', '做' + names[i - 1] + '的时候，' + names[j - 1] + '还没发生，所以用不到它。');
+          });
+        })(i, j, cell);
+      }
+      cell.dataset.row = i; cell.style.setProperty('--r', i - 1);
+      grid.appendChild(cell);
+    }
+  }
+
+  say('', intro);
+  document.getElementById('mask').hidden = false;
+})();
+</script>
+</body>
+</html>
