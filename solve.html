@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>做题：从小 GPT 到 Agent harness</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon-seal.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<style>
+  :root {
+    --paper: #eff3f2;
+    --paper-deep: #e3eae9;
+    --editor: #f9fbfa;
+    --ink: #17242b;
+    --ink-soft: #536469;
+    --line: #c3cfce;
+    --azurite: #1f5f8b;
+    --azurite-wash: #d3e2ec;
+    --malachite: #26806c;
+    --malachite-wash: #d6ebe4;
+    --cinnabar: #b5362a;
+    --cinnabar-wash: #f4dedb;
+    --serif: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
+    --sans: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0f181d;
+      --paper-deep: #16232a;
+      --editor: #0a1115;
+      --ink: #e2ebea;
+      --ink-soft: #94a6a8;
+      --line: #2b3d44;
+      --azurite: #74add6;
+      --azurite-wash: #1b3345;
+      --malachite: #5cb8a1;
+      --malachite-wash: #14332d;
+      --cinnabar: #dc5b4d;
+      --cinnabar-wash: #3a1c19;
+    }
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    display: flex; flex-direction: column;
+    background: var(--paper); color: var(--ink);
+    font-family: var(--sans); font-size: 1rem; line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--azurite); text-underline-offset: 0.2em; }
+  :focus-visible { outline: 2px solid var(--azurite); outline-offset: 2px; }
+  button, select { font: inherit; color: inherit; }
+
+  /* 顶栏：回路线图、换题、总进度 */
+  .bar {
+    flex: none;
+    display: flex; align-items: center; gap: 1rem;
+    padding: 0.6rem 1.25rem;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.9rem;
+  }
+  .home { display: inline-flex; align-items: center; gap: 0.6rem; color: var(--ink-soft); text-decoration: none; white-space: nowrap; }
+  .home:hover { color: var(--ink); }
+  .home img { width: 1.6rem; height: 1.6rem; border-radius: 3px; }
+  .where { flex: 1; display: flex; justify-content: center; align-items: center; gap: 0.5rem; min-width: 0; }
+  .where a { white-space: nowrap; text-decoration: none; padding: 0.2rem 0.5rem; border-radius: 3px; }
+  .where a:hover { background: var(--azurite-wash); }
+  .where a[aria-disabled="true"] { color: var(--line); pointer-events: none; }
+  .where select {
+    min-width: 0; max-width: 22rem; flex: 0 1 auto;
+    padding: 0.3rem 0.5rem;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 3px;
+  }
+  .tally { color: var(--ink-soft); white-space: nowrap; }
+  .tally b { font-family: var(--serif); font-weight: 700; color: var(--ink); font-size: 1.05rem; }
+
+  /* 左边题面，右边代码 */
+  .work { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .pane { min-height: 0; min-width: 0; }
+  .statement { overflow-y: auto; padding: 1.75rem 2rem 3rem; border-right: 1px solid var(--line); }
+  .statement > * { max-width: 40rem; }
+
+  .crumb { margin: 0 0 0.6rem; font-size: 0.9rem; color: var(--ink-soft); }
+  .crumb a { color: inherit; }
+  h1 {
+    margin: 0; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+    font-family: var(--serif); font-weight: 700; font-size: 1.7rem; line-height: 1.35; letter-spacing: 0.01em;
+  }
+  .seal {
+    flex: none; width: 1.75rem; height: 1.75rem;
+    display: inline-grid; place-items: center;
+    border-radius: 2px; box-shadow: inset 0 0 0 1.5px currentColor;
+    font-family: var(--serif); font-weight: 700; font-size: 0.95rem; line-height: 1;
+  }
+  .seal.pass { color: var(--malachite); }
+  .seal.fail { color: var(--cinnabar); }
+  .meta { margin: 0.5rem 0 1.5rem; font-size: 0.9rem; color: var(--ink-soft); }
+
+  .prose p { margin: 0 0 1rem; }
+  .prose ul, .prose ol { margin: 0 0 1rem; padding-left: 1.3em; }
+  .prose li { margin: 0.35rem 0; }
+  .prose li > ul, .prose li > ol { margin: 0.35rem 0 0; }
+  .prose h3 { margin: 1.75rem 0 0.6rem; font-family: var(--serif); font-weight: 700; font-size: 1.05rem; }
+  code {
+    font-family: var(--mono); font-size: 0.86em;
+    background: var(--paper-deep); padding: 0.1em 0.35em; border-radius: 3px;
+  }
+  pre {
+    margin: 0 0 1rem; padding: 0.85rem 1rem;
+    background: var(--paper-deep); border-radius: 3px;
+    overflow-x: auto; font-size: 0.82rem; line-height: 1.6; tab-size: 4;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+
+  .fold { border-top: 1px solid var(--line); }
+  .fold:last-of-type { border-bottom: 1px solid var(--line); }
+  .fold:first-of-type { margin-top: 2rem; }
+  .fold > summary { padding: 0.7rem 0; cursor: pointer; font-weight: 600; }
+  .fold > summary:hover { color: var(--azurite); }
+  .fold h4 { margin: 0.75rem 0 0.4rem; font-size: 0.9rem; font-weight: 600; color: var(--ink-soft); }
+
+  /* 右边：编辑器、按钮、结果 */
+  .code { display: flex; flex-direction: column; background: var(--editor); }
+  #editor { flex: 1 1 55%; min-height: 12rem; overflow: hidden; }
+  #editor textarea.plain {
+    width: 100%; height: 100%; resize: none; border: 0; padding: 1rem;
+    background: var(--editor); color: var(--ink);
+    font-family: var(--mono); font-size: 0.85rem; line-height: 1.6; tab-size: 4;
+  }
+  .CodeMirror {
+    height: 100%; background: var(--editor); color: var(--ink);
+    font-family: var(--mono); font-size: 0.85rem; line-height: 1.6;
+  }
+  .CodeMirror-gutters { background: var(--editor); border-right: 1px solid var(--line); }
+  .CodeMirror-linenumber { color: var(--ink-soft); opacity: 0.7; }
+  .CodeMirror-cursor { border-left-color: var(--ink); }
+  .CodeMirror-selected, .CodeMirror-focused .CodeMirror-selected { background: var(--azurite-wash); }
+  .CodeMirror-activeline-background { background: transparent; }
+  .cm-s-default .cm-keyword { color: var(--azurite); font-weight: 600; }
+  .cm-s-default .cm-def { color: var(--ink); font-weight: 600; }
+  .cm-s-default .cm-variable, .cm-s-default .cm-variable-2, .cm-s-default .cm-property, .cm-s-default .cm-operator { color: var(--ink); }
+  .cm-s-default .cm-builtin { color: var(--azurite); }
+  .cm-s-default .cm-string { color: var(--malachite); }
+  .cm-s-default .cm-number { color: var(--cinnabar); }
+  .cm-s-default .cm-comment { color: var(--ink-soft); }
+
+  .actions {
+    flex: none; display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.6rem 1rem;
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    background: var(--paper);
+  }
+  .actions button {
+    padding: 0.4rem 1rem; border-radius: 3px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--paper);
+  }
+  .actions button:hover { border-color: var(--ink-soft); }
+  .actions #run { background: var(--azurite); border-color: var(--azurite); color: var(--paper); font-weight: 600; }
+  .actions #run:hover { filter: brightness(1.1); }
+  .actions #run:disabled { opacity: 0.6; cursor: progress; }
+  .status { margin-left: auto; font-size: 0.85rem; color: var(--ink-soft); text-align: right; }
+
+  .results { flex: 0 1 45%; min-height: 8rem; overflow-y: auto; padding: 1rem 1.25rem 2rem; background: var(--paper); }
+  .results .hint { margin: 0; color: var(--ink-soft); font-size: 0.9rem; }
+  .verdict { margin: 0 0 0.9rem; font-family: var(--serif); font-weight: 700; font-size: 1.1rem; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+  .verdict a { font-family: var(--sans); font-weight: 400; font-size: 0.9rem; }
+  .cases { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.55rem; }
+  .cases li { display: grid; grid-template-columns: 1.75rem minmax(0, 1fr); column-gap: 0.75rem; align-items: start; }
+  .cases .name { padding-top: 0.05rem; }
+  .cases .msg, .crash {
+    grid-column: 2; margin: 0.3rem 0 0; padding: 0.5rem 0.7rem;
+    background: var(--cinnabar-wash); border-radius: 3px;
+    font-family: var(--mono); font-size: 0.8rem; line-height: 1.55;
+    white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+  .crash { margin: 0 0 1rem; }
+  .stdout h4 { margin: 1.25rem 0 0.4rem; font-size: 0.85rem; font-weight: 600; color: var(--ink-soft); }
+  .stdout pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  .missing { max-width: 36rem; margin: 4rem auto; padding: 0 1.5rem; }
+
+  @media (max-width: 56rem) {
+    html, body { height: auto; }
+    .bar { flex-wrap: wrap; row-gap: 0.4rem; }
+    .where { order: 3; flex-basis: 100%; justify-content: space-between; }
+    .tally { margin-left: auto; }
+    .work { display: block; }
+    .statement { border-right: 0; border-bottom: 1px solid var(--line); padding: 1.5rem 1.1rem 2rem; }
+    #editor { height: 24rem; flex: none; }
+    .results { flex: none; min-height: 10rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <a class="home" href="index.html" id="home"><img src="favicon-seal.png" alt="">路线图</a>
+  <nav class="where" aria-label="换题">
+    <a id="prev" href="#">上一题</a>
+    <select id="jump" aria-label="跳到某一题"></select>
+    <a id="next" href="#">下一题</a>
+  </nav>
+  <span class="tally" id="tally"></span>
+</header>
+
+<main class="work" id="work">
+  <section class="pane statement">
+    <p class="crumb" id="crumb"></p>
+    <h1><span id="title"></span><span class="seal pass" id="stamp" hidden title="已通过全部测试">过</span></h1>
+    <p class="meta" id="meta"></p>
+    <div class="prose" id="body"></div>
+    <details class="fold" id="tests-fold">
+      <summary>看测试代码</summary>
+      <div id="tests-src"></div>
+    </details>
+    <details class="fold">
+      <summary>看参考答案</summary>
+      <pre><code id="answer"></code></pre>
+    </details>
+  </section>
+
+  <section class="pane code">
+    <div id="editor"></div>
+    <div class="actions">
+      <button id="run" type="button">运行测试</button>
+      <button id="reset" type="button">重置代码</button>
+      <span class="status" id="status" aria-live="polite"></span>
+    </div>
+    <div class="results" id="results" aria-live="polite">
+      <p class="hint">写好之后点「运行测试」，或者按 Ctrl / ⌘ + Enter。代码在你的浏览器里用 Python 和 NumPy 运行，不会上传。</p>
+    </div>
+  </section>
+</main>
+
+<script src="problems.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script>
+(function () {
+  var STAGES = ['Transformer', '预训练', '后训练', '推理与 Infra', 'Agent / CUA', 'Evals 与面试'];
+  var SOLVED_KEY = 'int.youngerwu.solved';
+  var CODE_KEY = 'int.youngerwu.code.';
+  var TIMEOUT_MS = 20000;
+  var problems = window.PROBLEMS || [];
+  var $ = function (id) { return document.getElementById(id); };
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function store(key, value) { try { localStorage.setItem(key, value); } catch (e) {} }
+  function load(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+  function solvedSet() {
+    var out = {};
+    try { (JSON.parse(load(SOLVED_KEY)) || []).forEach(function (id) { out[id] = true; }); } catch (e) {}
+    return out;
+  }
+
+  // ── 哪一题 ──
+  var wanted = new URLSearchParams(location.search).get('p');
+  var index = wanted ? problems.findIndex(function (p) { return p.id === wanted; }) : 0;
+  if (index < 0 || !problems.length) {
+    $('work').innerHTML = '';
+    var box = el('div', 'missing');
+    box.appendChild(el('p', null, problems.length ? '没有这道题：' + wanted : '题目数据没有加载出来。'));
+    var back = el('a', null, '回到路线图'); back.href = 'index.html';
+    box.appendChild(back);
+    $('work').appendChild(box);
+    $('work').style.display = 'block';
+    return;
+  }
+  var prob = problems[index];
+  var inStage = problems.filter(function (p) { return p.stage === prob.stage; });
+  var solved = solvedSet();
+
+  // ── 题面 ──
+  document.title = prob.title + '：从小 GPT 到 Agent harness';
+  $('home').href = 'index.html#s' + prob.stage;
+  var crumb = $('crumb');
+  var stageLink = el('a', null, '第 ' + prob.stage + ' 步 ' + STAGES[prob.stage - 1]);
+  stageLink.href = 'index.html#s' + prob.stage;
+  crumb.appendChild(stageLink);
+  crumb.appendChild(document.createTextNode('　第 ' + (inStage.indexOf(prob) + 1) + ' 题，共 ' + inStage.length + ' 题'));
+  $('title').textContent = prob.title;
+  $('meta').textContent = '难度：' + prob.level + '　' + prob.tests.length + ' 个测试';
+  $('body').innerHTML = prob.statement;              // 题面是本站自己写的 HTML
+  $('answer').textContent = prob.solution;
+  var testsSrc = $('tests-src');
+  if (prob.setup) {
+    testsSrc.appendChild(el('h4', null, '每个测试之前先运行'));
+    var sp = el('pre'); sp.appendChild(el('code', null, prob.setup)); testsSrc.appendChild(sp);
+  }
+  prob.tests.forEach(function (t) {
+    testsSrc.appendChild(el('h4', null, t.name));
+    var pre = el('pre'); pre.appendChild(el('code', null, t.code)); testsSrc.appendChild(pre);
+  });
+
+  // ── 换题 ──
+  function link(a, target) {
+    if (target) a.href = '?p=' + target.id;
+    else { a.removeAttribute('href'); a.setAttribute('aria-disabled', 'true'); }
+  }
+  link($('prev'), problems[index - 1]);
+  link($('next'), problems[index + 1]);
+  var jump = $('jump');
+  STAGES.forEach(function (name, i) {
+    var group = document.createElement('optgroup');
+    group.label = (i + 1) + ' ' + name;
+    problems.forEach(function (p) {
+      if (p.stage !== i + 1) return;
+      var o = el('option', null, p.title + (solved[p.id] ? '（已通过）' : ''));
+      o.value = p.id; o.selected = p.id === prob.id;
+      group.appendChild(o);
+    });
+    jump.appendChild(group);
+  });
+  jump.addEventListener('change', function () { location.search = '?p=' + jump.value; });
+
+  function showProgress() {
+    var s = solvedSet();
+    var n = problems.filter(function (p) { return s[p.id]; }).length;
+    $('tally').innerHTML = '已通过 <b>' + n + '</b> / ' + problems.length;
+    $('stamp').hidden = !s[prob.id];
+  }
+  showProgress();
+
+  // ── 编辑器：有 CodeMirror 就用，没加载出来就退回 textarea ──
+  var saved = load(CODE_KEY + prob.id);
+  var initial = saved != null ? saved : prob.starter;
+  var editor, getCode, setCode;
+  var saveTimer;
+  function onEdit() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () { store(CODE_KEY + prob.id, getCode()); }, 400);
+  }
+  if (window.CodeMirror) {
+    editor = CodeMirror($('editor'), {
+      value: initial, mode: 'python', lineNumbers: true,
+      indentUnit: 4, tabSize: 4, indentWithTabs: false, lineWrapping: false,
+      extraKeys: {
+        Tab: function (cm) {
+          if (cm.somethingSelected()) cm.indentSelection('add');
+          else cm.replaceSelection('    ', 'end');
+        },
+        'Shift-Tab': function (cm) { cm.indentSelection('subtract'); },
+        'Ctrl-Enter': function () { runTests(); },
+        'Cmd-Enter': function () { runTests(); }
+      }
+    });
+    getCode = function () { return editor.getValue(); };
+    setCode = function (v) { editor.setValue(v); };
+    editor.on('change', onEdit);
+  } else {
+    var ta = el('textarea', 'plain');
+    ta.value = initial; ta.spellcheck = false;
+    ta.setAttribute('aria-label', '代码');
+    $('editor').appendChild(ta);
+    getCode = function () { return ta.value; };
+    setCode = function (v) { ta.value = v; };
+    ta.addEventListener('input', onEdit);
+    ta.addEventListener('keydown', function (e) {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        var s = ta.selectionStart;
+        ta.value = ta.value.slice(0, s) + '    ' + ta.value.slice(ta.selectionEnd);
+        ta.selectionStart = ta.selectionEnd = s + 4;
+        onEdit();
+      }
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); runTests(); }
+    });
+  }
+
+  // ── 重置：点两次才生效，不弹对话框 ──
+  var resetBtn = $('reset'), armed = null;
+  resetBtn.addEventListener('click', function () {
+    if (!armed) {
+      resetBtn.textContent = '再点一次，清掉你写的代码';
+      armed = setTimeout(function () { armed = null; resetBtn.textContent = '重置代码'; }, 3000);
+      return;
+    }
+    clearTimeout(armed); armed = null; resetBtn.textContent = '重置代码';
+    setCode(prob.starter);
+    store(CODE_KEY + prob.id, prob.starter);
+  });
+
+  // ── Python worker ──
+  var worker, ready = false, fatal = null, running = false, queued = false, runId = 0, timer;
+  var runBtn = $('run'), status = $('status'), results = $('results');
+
+  function boot() {
+    ready = false;
+    status.textContent = '正在加载 Python，第一次要十几秒';
+    worker = new Worker('worker.js');
+    worker.onmessage = function (e) {
+      var m = e.data;
+      if (m.type === 'ready') {
+        ready = true; status.textContent = 'Python 就绪';
+        if (queued) { queued = false; send(); }
+      } else if (m.type === 'fatal') {
+        fatal = m.message; status.textContent = 'Python 没加载出来';
+        if (queued) { queued = false; finish(); showCrash('Python 运行环境加载失败，检查网络后刷新页面。\n' + fatal); }
+      } else if (m.type === 'result' && m.id === runId) {
+        finish(); show(m.result);
+      }
+    };
+    worker.onerror = function (e) {
+      fatal = e.message || 'worker 出错';
+      status.textContent = 'Python 没加载出来';
+      if (running) { finish(); showCrash('Python 运行环境出错，刷新页面再试。\n' + fatal); }
+    };
+  }
+
+  function finish() {
+    running = false; clearTimeout(timer);
+    runBtn.disabled = false; runBtn.textContent = '运行测试';
+    if (ready) status.textContent = 'Python 就绪';
+  }
+  function send() {
+    runId += 1;
+    status.textContent = '运行中';
+    worker.postMessage({ id: runId, code: getCode(), setup: prob.setup, tests: prob.tests });
+    timer = setTimeout(function () {
+      worker.terminate();
+      finish();
+      showCrash('超过 ' + (TIMEOUT_MS / 1000) + ' 秒还没跑完，已经停掉。检查一下有没有死循环。');
+      boot();
+    }, TIMEOUT_MS);
+  }
+  function runTests() {
+    if (running) return;
+    store(CODE_KEY + prob.id, getCode());
+    if (fatal) { showCrash('Python 运行环境加载失败，检查网络后刷新页面。\n' + fatal); return; }
+    running = true; runBtn.disabled = true; runBtn.textContent = '运行中';
+    if (ready) send();
+    else { queued = true; status.textContent = 'Python 还在加载，加载完自动运行'; }
+  }
+  runBtn.addEventListener('click', runTests);
+
+  // ── 结果 ──
+  function showCrash(text) {
+    results.textContent = '';
+    results.appendChild(el('p', 'verdict', '没有跑起来'));
+    results.appendChild(el('pre', 'crash', text));
+  }
+  function show(r) {
+    results.textContent = '';
+    if (r.error) {
+      results.appendChild(el('p', 'verdict', '代码没有跑起来'));
+      results.appendChild(el('pre', 'crash', r.error));
+    } else {
+      var passed = r.tests.filter(function (t) { return t.ok; }).length;
+      var all = passed === r.tests.length;
+      var verdict = el('p', 'verdict');
+      verdict.appendChild(el('span', 'seal ' + (all ? 'pass' : 'fail'), all ? '过' : '错'));
+      verdict.appendChild(document.createTextNode(all
+        ? '全部通过，' + passed + ' / ' + r.tests.length
+        : r.tests.length + ' 个测试，通过 ' + passed + ' 个'));
+      if (all) {
+        var s = solvedSet(); s[prob.id] = true;
+        store(SOLVED_KEY, JSON.stringify(Object.keys(s)));
+        showProgress();
+        var after = problems[index + 1];
+        if (after) {
+          var go = el('a', null, '下一题：' + after.title); go.href = '?p=' + after.id;
+          verdict.appendChild(go);
+        } else {
+          var home = el('a', null, '最后一题做完了，回路线图'); home.href = 'index.html';
+          verdict.appendChild(home);
+        }
+      }
+      results.appendChild(verdict);
+      var list = el('ul', 'cases');
+      r.tests.forEach(function (t) {
+        var li = el('li');
+        li.appendChild(el('span', 'seal ' + (t.ok ? 'pass' : 'fail'), t.ok ? '过' : '错'));
+        li.appendChild(el('span', 'name', t.name));
+        if (!t.ok) li.appendChild(el('pre', 'msg', t.msg));
+        list.appendChild(li);
+      });
+      results.appendChild(list);
+    }
+    if (r.stdout) {
+      var out = el('div', 'stdout');
+      out.appendChild(el('h4', null, '你的代码 print 出来的内容'));
+      out.appendChild(el('pre', null, r.stdout));
+      results.appendChild(out);
+    }
+    results.scrollTop = 0;
+  }
+
+  // 给调试用：把每道题的参考答案和起始代码都在真实的浏览器环境里跑一遍。
+  window.__selftest = function () {
+    return new Promise(function (resolve) {
+      var w = new Worker('worker.js'), jobs = [], out = [], n = 0;
+      problems.forEach(function (p) {
+        jobs.push({ id: p.id, kind: 'solution', code: p.solution, setup: p.setup, tests: p.tests });
+        jobs.push({ id: p.id, kind: 'starter', code: p.starter, setup: p.setup, tests: p.tests });
+      });
+      function next() {
+        if (n === jobs.length) { w.terminate(); resolve(out); return; }
+        var j = jobs[n];
+        w.postMessage({ id: n, code: j.code, setup: j.setup, tests: j.tests });
+      }
+      w.onmessage = function (e) {
+        if (e.data.type === 'ready') { next(); return; }
+        if (e.data.type === 'fatal') { resolve([{ fatal: e.data.message }]); return; }
+        var j = jobs[n], r = e.data.result;
+        out.push({ id: j.id, kind: j.kind, error: r.error,
+                   passed: r.tests.filter(function (t) { return t.ok; }).length, total: j.tests.length,
+                   failed: r.tests.filter(function (t) { return !t.ok; }).map(function (t) { return t.name + ' :: ' + t.msg; }) });
+        n += 1; next();
+      };
+    });
+  };
+
+  boot();
+})();
+</script>
+</body>
+</html>

@@ -257,6 +257,18 @@
   .probs li { display: grid; grid-template-columns: auto auto minmax(0, 1fr); column-gap: 0.6em; align-items: baseline; }
   .probs input { width: 1rem; height: 1rem; margin: 0; accent-color: var(--malachite); transform: translateY(0.15em); cursor: pointer; }
   .probs .lv { font-size: 0.85rem; color: var(--ink-soft); }
+  .own { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; font-size: 0.95rem; line-height: 1.6; }
+  .own li { display: grid; grid-template-columns: auto auto minmax(0, 1fr); column-gap: 0.6em; align-items: baseline; }
+  .own .box {
+    width: 1rem; height: 1rem; transform: translateY(0.15em);
+    display: grid; place-items: center;
+    border-radius: 2px; box-shadow: inset 0 0 0 1.5px var(--line);
+    font-size: 0.7rem; line-height: 1; color: var(--paper);
+  }
+  .own .box.done { background: var(--malachite); box-shadow: none; }
+  .own .box.done::after { content: "\2713"; }
+  .own .lv { font-size: 0.85rem; color: var(--ink-soft); }
+  .own a { font-weight: 600; }
   .probs li:has(input:checked) a { color: var(--ink-soft); text-decoration-color: var(--line); }
 
   .qa { padding: 0.6rem 0; }
@@ -303,7 +315,7 @@
         <span>再接上 Agent harness。</span>
       </h1>
       <div>
-        <p class="lede">一个项目做六步。每一步只用前面做出来的东西，结束时都有一个能判对错的检查：通过了才往下走。最后得到的 harness 能跑任务，也能说清任务失败在哪。每一步都配了要点、练习题和自测问答。</p>
+        <p class="lede">一个项目做六步。每一步只用前面做出来的东西，结束时都有一个能判对错的检查：通过了才往下走。最后得到的 harness 能跑任务，也能说清任务失败在哪。每一步都配了要点、能直接在这页做的练习题和自测问答。</p>
       </div>
 
       <div class="mask" id="mask" hidden>
@@ -318,7 +330,8 @@
         doing = 进行中
         done  = 已验证（会盖上红印）
       想挂笔记或代码链接，在 <p class="state"> 里加一个 <a href="...">笔记</a>。
-      做题的勾选是访客各自浏览器里的 localStorage，和 data-status 无关。
+      做题记录是访客各自浏览器里的 localStorage，和 data-status 无关。
+      「在这页做」的题目列表由 problems.js 填进去，题目源文件在 tools/。
     -->
     <ol class="stages">
 
@@ -361,7 +374,11 @@ def check_causal(model, vocab_size, T=16, t=8):
           <details class="drill">
             <summary><span class="seal">练</span><span class="what">练习题</span><span class="count" data-count></span></summary>
             <div class="inner">
-            <h3>基础</h3>
+            <h3>在这页做</h3>
+            <ul class="own" data-stage="1">
+              <li><a href="solve.html">打开做题页</a></li>
+            </ul>
+            <h3>Deep-ML 上的同类题：基础</h3>
             <ul class="probs">
               <li><input type="checkbox" data-pid="374" aria-label="做完了：Character-Level Tokenizer (stoi/itos/BOS)"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/374" lang="en">Character-Level Tokenizer (stoi/itos/BOS)</a></li>
               <li><input type="checkbox" data-pid="945" aria-label="做完了：Token Embedding Lookup Table"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/945" lang="en">Token Embedding Lookup Table</a></li>
@@ -371,7 +388,7 @@ def check_causal(model, vocab_size, T=16, t=8):
               <li><input type="checkbox" data-pid="109" aria-label="做完了：Implement Layer Normalization for Sequence Data"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/109" lang="en">Implement Layer Normalization for Sequence Data</a></li>
               <li><input type="checkbox" data-pid="113" aria-label="做完了：Implement a Simple Residual Block with Shortcut Connection"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/113" lang="en">Implement a Simple Residual Block with Shortcut Connection</a></li>
             </ul>
-            <h3>进阶</h3>
+            <h3>Deep-ML 上的同类题：进阶</h3>
             <ul class="probs">
               <li><input type="checkbox" data-pid="380" aria-label="做完了：Byte Pair Encoding (BPE) Tokenizer"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/380" lang="en">Byte Pair Encoding (BPE) Tokenizer</a></li>
               <li><input type="checkbox" data-pid="957" aria-label="做完了：Implement Batched Causal Self-Attention"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/957" lang="en">Implement Batched Causal Self-Attention</a></li>
@@ -381,7 +398,6 @@ def check_causal(model, vocab_size, T=16, t=8):
               <li><input type="checkbox" data-pid="1056" aria-label="做完了：Pre-Norm GPT Transformer Block Forward Pass"><span class="lv">难</span><a href="https://www.deep-ml.com/problems/1056" lang="en">Pre-Norm GPT Transformer Block Forward Pass</a></li>
               <li><input type="checkbox" data-pid="918" aria-label="做完了：Build a Tiny GPT"><span class="lv">难</span><a href="https://www.deep-ml.com/problems/918" lang="en">Build a Tiny GPT</a></li>
             </ul>
-            <p class="aside">「改未来 token」这个检查题库里没有，用上面那段代码。</p>
             </div>
           </details>
           <details class="quiz">
@@ -449,7 +465,11 @@ def evaluate(model, batches):                      # 留出集上的平均 loss
           <details class="drill">
             <summary><span class="seal">练</span><span class="what">练习题</span><span class="count" data-count></span></summary>
             <div class="inner">
-            <h3>基础</h3>
+            <h3>在这页做</h3>
+            <ul class="own" data-stage="2">
+              <li><a href="solve.html">打开做题页</a></li>
+            </ul>
+            <h3>Deep-ML 上的同类题：基础</h3>
             <ul class="probs">
               <li><input type="checkbox" data-pid="954" aria-label="做完了：Construct Next-Token Prediction Targets"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/954" lang="en">Construct Next-Token Prediction Targets</a></li>
               <li><input type="checkbox" data-pid="944" aria-label="做完了：Sliding Window Text Dataset Generator"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/944" lang="en">Sliding Window Text Dataset Generator</a></li>
@@ -459,7 +479,7 @@ def evaluate(model, batches):                      # 留出集上的平均 loss
               <li><input type="checkbox" data-pid="886" aria-label="做完了：Run One Training Step: Forward, Loss, Backward, Optimizer"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/886" lang="en">Run One Training Step: Forward, Loss, Backward, Optimizer</a></li>
               <li><input type="checkbox" data-pid="86" aria-label="做完了：Detect Overfitting or Underfitting"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/86" lang="en">Detect Overfitting or Underfitting</a></li>
             </ul>
-            <h3>进阶</h3>
+            <h3>Deep-ML 上的同类题：进阶</h3>
             <ul class="probs">
               <li><input type="checkbox" data-pid="26" aria-label="做完了：Implementing Basic Autograd Operations"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/26" lang="en">Implementing Basic Autograd Operations</a></li>
               <li><input type="checkbox" data-pid="169" aria-label="做完了：Implement AdamW Optimizer Step"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/169" lang="en">Implement AdamW Optimizer Step</a></li>
@@ -541,7 +561,11 @@ assert [n for n, p in lora.named_parameters() if p.requires_grad] == ["A", "B"]<
           <details class="drill">
             <summary><span class="seal">练</span><span class="what">练习题</span><span class="count" data-count></span></summary>
             <div class="inner">
-            <h3>基础</h3>
+            <h3>在这页做</h3>
+            <ul class="own" data-stage="3">
+              <li><a href="solve.html">打开做题页</a></li>
+            </ul>
+            <h3>Deep-ML 上的同类题：基础</h3>
             <ul class="probs">
               <li><input type="checkbox" data-pid="867" aria-label="做完了：Calculate LoRA Trainable Parameter Count vs Full Fine-Tuning"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/867" lang="en">Calculate LoRA Trainable Parameter Count vs Full Fine-Tuning</a></li>
               <li><input type="checkbox" data-pid="222" aria-label="做完了：LoRA: Low-Rank Adaptation Forward Pass"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/222" lang="en">LoRA: Low-Rank Adaptation Forward Pass</a></li>
@@ -551,7 +575,7 @@ assert [n for n, p in lora.named_parameters() if p.requires_grad] == ["A", "B"]<
               <li><input type="checkbox" data-pid="1068" aria-label="做完了：DPO Implicit Reward Computation"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/1068" lang="en">DPO Implicit Reward Computation</a></li>
               <li><input type="checkbox" data-pid="224" aria-label="做完了：Group Relative Advantage for GRPO"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/224" lang="en">Group Relative Advantage for GRPO</a></li>
             </ul>
-            <h3>进阶</h3>
+            <h3>Deep-ML 上的同类题：进阶</h3>
             <ul class="probs">
               <li><input type="checkbox" data-pid="1074" aria-label="做完了：Recursively Replace Linear Layers with LoRA"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/1074" lang="en">Recursively Replace Linear Layers with LoRA</a></li>
               <li><input type="checkbox" data-pid="1065" aria-label="做完了：Custom Collate Function for Instruction Finetuning"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/1065" lang="en">Custom Collate Function for Instruction Finetuning</a></li>
@@ -562,7 +586,7 @@ assert [n for n, p in lora.named_parameters() if p.requires_grad] == ["A", "B"]<
               <li><input type="checkbox" data-pid="485" aria-label="做完了：PPO Clipped Surrogate Loss with Clip Diagnostics"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/485" lang="en">PPO Clipped Surrogate Loss with Clip Diagnostics</a></li>
               <li><input type="checkbox" data-pid="2356" aria-label="做完了：Is the Difference Real? Comparing Two Checkpoints on a Benchmark Across Seeds"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2356" lang="en">Is the Difference Real? Comparing Two Checkpoints on a Benchmark Across Seeds</a></li>
             </ul>
-            <p class="aside">题库只覆盖 loss 和模块，完整跑一次 LoRA SFT 要自己做。</p>
+            <p class="aside">这些题只覆盖 loss 和模块。完整跑一次 LoRA SFT 要在自己的机器上做。</p>
             </div>
           </details>
           <details class="quiz">
@@ -627,7 +651,11 @@ def check_kv_cache(forward, forward_cached, prompt, new_tokens=20):
           <details class="drill">
             <summary><span class="seal">练</span><span class="what">练习题</span><span class="count" data-count></span></summary>
             <div class="inner">
-            <h3>基础</h3>
+            <h3>在这页做</h3>
+            <ul class="own" data-stage="4">
+              <li><a href="solve.html">打开做题页</a></li>
+            </ul>
+            <h3>Deep-ML 上的同类题：基础</h3>
             <ul class="probs">
               <li><input type="checkbox" data-pid="378" aria-label="做完了：Temperature Sampling"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/378" lang="en">Temperature Sampling</a></li>
               <li><input type="checkbox" data-pid="383" aria-label="做完了：Top-p (Nucleus) Sampling"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/383" lang="en">Top-p (Nucleus) Sampling</a></li>
@@ -637,7 +665,7 @@ def check_kv_cache(forward, forward_cached, prompt, new_tokens=20):
               <li><input type="checkbox" data-pid="294" aria-label="做完了：Implement INT8 Quantization"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/294" lang="en">Implement INT8 Quantization</a></li>
               <li><input type="checkbox" data-pid="780" aria-label="做完了：Pipeline Parallelism Bubble Ratio Calculator"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/780" lang="en">Pipeline Parallelism Bubble Ratio Calculator</a></li>
             </ul>
-            <h3>进阶</h3>
+            <h3>Deep-ML 上的同类题：进阶</h3>
             <ul class="probs">
               <li><input type="checkbox" data-pid="419" aria-label="做完了：Combined Token Sampling Pipeline (Temperature + Top-k + Top-p)"><span class="lv">难</span><a href="https://www.deep-ml.com/problems/419" lang="en">Combined Token Sampling Pipeline (Temperature + Top-k + Top-p)</a></li>
               <li><input type="checkbox" data-pid="1345" aria-label="做完了：A KV Cache for Autoregressive Decoding"><span class="lv">难</span><a href="https://www.deep-ml.com/problems/1345" lang="en">A KV Cache for Autoregressive Decoding</a></li>
@@ -719,7 +747,11 @@ def run_episode(model, env, tools, max_steps=20, timeout_s=10, log_path="run.jso
           <details class="drill">
             <summary><span class="seal">练</span><span class="what">练习题</span><span class="count" data-count></span></summary>
             <div class="inner">
-            <h3>基础</h3>
+            <h3>在这页做</h3>
+            <ul class="own" data-stage="5">
+              <li><a href="solve.html">打开做题页</a></li>
+            </ul>
+            <h3>Deep-ML 上的同类题：基础</h3>
             <ul class="probs">
               <li><input type="checkbox" data-pid="1034" aria-label="做完了：Chat Template Encoding for Instruct Models"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/1034" lang="en">Chat Template Encoding for Instruct Models</a></li>
               <li><input type="checkbox" data-pid="2171" aria-label="做完了：ReAct Agent Loop: Parse Actions, Call Tools, Feed Back Observations"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2171" lang="en">ReAct Agent Loop: Parse Actions, Call Tools, Feed Back Observations</a></li>
@@ -728,7 +760,7 @@ def run_episode(model, env, tools, max_steps=20, timeout_s=10, log_path="run.jso
               <li><input type="checkbox" data-pid="2168" aria-label="做完了：Trim Chat History to a Token Budget"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/2168" lang="en">Trim Chat History to a Token Budget</a></li>
               <li><input type="checkbox" data-pid="2370" aria-label="做完了：Structured Output: Validate Against a Schema, Retry With the Errors"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2370" lang="en">Structured Output: Validate Against a Schema, Retry With the Errors</a></li>
             </ul>
-            <h3>进阶</h3>
+            <h3>Deep-ML 上的同类题：进阶</h3>
             <ul class="probs">
               <li><input type="checkbox" data-pid="2184" aria-label="做完了：A Stateful Graph Engine for Agent Workflows"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2184" lang="en">A Stateful Graph Engine for Agent Workflows</a></li>
               <li><input type="checkbox" data-pid="2200" aria-label="做完了：Async API Call with Retries, Exponential Backoff and Retry-After"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2200" lang="en">Async API Call with Retries, Exponential Backoff and Retry-After</a></li>
@@ -737,7 +769,7 @@ def run_episode(model, env, tools, max_steps=20, timeout_s=10, log_path="run.jso
               <li><input type="checkbox" data-pid="2156" aria-label="做完了：Multi-Agent Watchdog: Repetition Loops and Wait-For Deadlocks"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2156" lang="en">Multi-Agent Watchdog: Repetition Loops and Wait-For Deadlocks</a></li>
               <li><input type="checkbox" data-pid="2372" aria-label="做完了：An Agent Permission Gate: Untrusted Content Cannot Trigger Risky Tools"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2372" lang="en">An Agent Permission Gate: Untrusted Content Cannot Trigger Risky Tools</a></li>
             </ul>
-            <p class="aside">题库里没有网页或 computer-use 的题，可控网页环境要自己搭。</p>
+            <p class="aside">这些题都不涉及真实网页。可控的网页环境要自己搭。</p>
             </div>
           </details>
           <details class="quiz">
@@ -809,7 +841,11 @@ def failure_table(labels):
           <details class="drill">
             <summary><span class="seal">练</span><span class="what">练习题</span><span class="count" data-count></span></summary>
             <div class="inner">
-            <h3>基础</h3>
+            <h3>在这页做</h3>
+            <ul class="own" data-stage="6">
+              <li><a href="solve.html">打开做题页</a></li>
+            </ul>
+            <h3>Deep-ML 上的同类题：基础</h3>
             <ul class="probs">
               <li><input type="checkbox" data-pid="325" aria-label="做完了：Exact Match Score with Normalization"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/325" lang="en">Exact Match Score with Normalization</a></li>
               <li><input type="checkbox" data-pid="226" aria-label="做完了：Pass@k and Majority Voting Evaluation Metrics"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/226" lang="en">Pass@k and Majority Voting Evaluation Metrics</a></li>
@@ -818,7 +854,7 @@ def failure_table(labels):
               <li><input type="checkbox" data-pid="2311" aria-label="做完了：McNemar&#x27;s Test: Is One Classifier Really Better on the Same Test Set?"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/2311" lang="en">McNemar's Test: Is One Classifier Really Better on the Same Test Set?</a></li>
               <li><input type="checkbox" data-pid="1337" aria-label="做完了：Cohen&#x27;s Kappa and Judge Position Bias"><span class="lv">易</span><a href="https://www.deep-ml.com/problems/1337" lang="en">Cohen's Kappa and Judge Position Bias</a></li>
             </ul>
-            <h3>进阶</h3>
+            <h3>Deep-ML 上的同类题：进阶</h3>
             <ul class="probs">
               <li><input type="checkbox" data-pid="796" aria-label="做完了：Verifiable Instruction Constraint Checker"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/796" lang="en">Verifiable Instruction Constraint Checker</a></li>
               <li><input type="checkbox" data-pid="2155" aria-label="做完了：Agent Trajectory Metrics: Completion, Tool Precision and Recall, Efficiency"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2155" lang="en">Agent Trajectory Metrics: Completion, Tool Precision and Recall, Efficiency</a></li>
@@ -827,7 +863,7 @@ def failure_table(labels):
               <li><input type="checkbox" data-pid="2357" aria-label="做完了：An Ablation Table with Seeds: Which Changes Actually Helped?"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/2357" lang="en">An Ablation Table with Seeds: Which Changes Actually Helped?</a></li>
               <li><input type="checkbox" data-pid="317" aria-label="做完了：Rubric-Based LLM Judge Evaluation"><span class="lv">中</span><a href="https://www.deep-ml.com/problems/317" lang="en">Rubric-Based LLM Judge Evaluation</a></li>
             </ul>
-            <p class="aside">把失败归成规划、工具执行、评分三类，没有对应的题，要自己读日志。</p>
+            <p class="aside">最后一题里每一步的判断是给定的。真实的归因要先读日志，才填得出那几个判断。</p>
             </div>
           </details>
           <details class="quiz">
@@ -849,10 +885,11 @@ def failure_table(labels):
   </main>
 
   <footer>
-    Yuyang Wu 的学习项目。主页在 <a href="https://youngerwu.com">youngerwu.com</a>。练习题来自 <a href="https://www.deep-ml.com/problems">Deep-ML</a>，按内容对应到每个阶段。做题的勾选只存在这个浏览器里。
+    Yuyang Wu 的学习项目。主页在 <a href="https://youngerwu.com">youngerwu.com</a>。「在这页做」的题是为这个项目写的，代码在你的浏览器里运行。同类题的链接指向 <a href="https://www.deep-ml.com/problems">Deep-ML</a>。做题记录只存在这个浏览器里。
   </footer>
 </div>
 
+<script src="problems.js"></script>
 <script>
 (function () {
   var names = ['Transformer', '预训练', '后训练', '推理', 'Agent', 'Evals'];
@@ -880,34 +917,57 @@ def failure_table(labels):
 
   var done = status.filter(function (s) { return s === 'done'; }).length;
 
-  // 做题打卡：勾选状态存在 localStorage
+  // 做题记录存在 localStorage：本页的题通过测试后自动记上，Deep-ML 的同类题手动勾
   var KEY = 'int.youngerwu.solved';
-  var solved = {};
-  try { (JSON.parse(localStorage.getItem(KEY)) || []).forEach(function (id) { solved[id] = true; }); } catch (e) {}
+  var problems = window.PROBLEMS || [];
   var boxes = Array.prototype.slice.call(document.querySelectorAll('.probs input'));
 
-  function tally() {
+  function readSolved() {
+    var out = {};
+    try { (JSON.parse(localStorage.getItem(KEY)) || []).forEach(function (id) { out[id] = true; }); } catch (e) {}
+    return out;
+  }
+
+  function render() {
+    var solved = readSolved();
     var total = 0;
-    stages.forEach(function (s) {
-      var own = s.querySelectorAll('.probs input');
-      var n = s.querySelectorAll('.probs input:checked').length;
+    stages.forEach(function (s, i) {
+      var own = problems.filter(function (p) { return p.stage === i + 1; });
+      var n = own.filter(function (p) { return solved[p.id]; }).length;
       total += n;
+      var list = s.querySelector('.own');
+      if (list && own.length) {
+        list.textContent = '';
+        own.forEach(function (p) {
+          var li = document.createElement('li');
+          var box = document.createElement('span');
+          box.className = 'box' + (solved[p.id] ? ' done' : '');
+          box.setAttribute('role', 'img');
+          box.setAttribute('aria-label', solved[p.id] ? '已通过' : '还没通过');
+          var lv = document.createElement('span'); lv.className = 'lv'; lv.textContent = p.level;
+          var a = document.createElement('a'); a.href = 'solve.html?p=' + p.id; a.textContent = p.title;
+          li.appendChild(box); li.appendChild(lv); li.appendChild(a);
+          list.appendChild(li);
+        });
+      }
       var c = s.querySelector('[data-count]');
-      if (c) c.textContent = n + ' / ' + own.length;
+      if (c && own.length) c.textContent = n + ' / ' + own.length;
     });
+    boxes.forEach(function (b) { b.checked = !!solved[b.dataset.pid]; });
     document.getElementById('tally').innerHTML =
       '<span>已验证 <b>' + done + '</b> / ' + stages.length + '</span>' +
-      '<span>做题 <b>' + total + '</b> / ' + boxes.length + '</span>';
+      (problems.length ? '<span>做题 <b>' + total + '</b> / ' + problems.length + '</span>' : '');
   }
   boxes.forEach(function (b) {
-    b.checked = !!solved[b.dataset.pid];
     b.addEventListener('change', function () {
+      var solved = readSolved();
       if (b.checked) solved[b.dataset.pid] = true; else delete solved[b.dataset.pid];
       try { localStorage.setItem(KEY, JSON.stringify(Object.keys(solved))); } catch (e) {}
-      tally();
+      render();
     });
   });
-  tally();
+  render();
+  window.addEventListener('pageshow', render);     // 从做题页返回时刷新
 
   var grid = document.getElementById('mask-grid');
   var note = document.getElementById('mask-note');
